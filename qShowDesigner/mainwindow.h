@@ -33,6 +33,8 @@ private slots:
 
     void on_editing_finished();
 
+    void on_page_changed(quint16 pageNo);
+
 private:
     void ShowErrorMessage(const QString &text, const QString &informativeText = "");
     void Save();

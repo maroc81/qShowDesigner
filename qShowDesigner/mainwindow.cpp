@@ -54,6 +54,8 @@ MainWindow::MainWindow(QWidget *parent) :
         QString lblText = "Scene " + QString::number(row+1);
         label->setText( lblText );
     }*/
+
+    connect( &mSd, SIGNAL(pageChanged(quint16)), this, SLOT(on_page_changed(quint16)));
 }
 
 MainWindow::~MainWindow()
@@ -93,46 +95,24 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_btn_num_released()
 {
-    // cast sender to push button
-    QPushButton *pushButton = qobject_cast<QPushButton*>(sender());
-    QString buttonNumber = pushButton->text();
-    int scene = buttonNumber.toInt();
+    QPushButton *clickedButton = qobject_cast<QPushButton*>(sender());
+    QString buttonNumber = clickedButton->text();
+    int btnNum = buttonNumber.toInt();
 
-    qDebug() << "Button " << scene << " was released";
+    qDebug() << "Button " << btnNum << " was released";
 
-    if (!mSd.SelectScene(scene))
+    if (!mSd.SelectScene(btnNum))
     {
         ui->statusBar->showMessage("Failed to set scene");
     }
 
-    // get the sender as a QWidget object
-    QWidget *buttonWidget = qobject_cast<QWidget*>(sender());
-    if (!buttonWidget)
-        return;
-
-    // find the index button in the layout
-    int btnIndex = ui->gridLayout->indexOf(buttonWidget);
-    if ( btnIndex < 0 )
+    for (int row = 0; row < ui->gridLayout->rowCount(); row++)
     {
-        qDebug() << "Button not found in layout " << btnIndex;
-        return;
+        QLayoutItem *item = ui->gridLayout->itemAtPosition(row, 0);
+        QPushButton *btn = qobject_cast<QPushButton*> (item->widget());
+        btn->setStyleSheet("");
     }
-
-    int rowOfButton, columnOfButton, rowSpanOfButton, columnSpanOfButton;
-    // get the row and column of the button
-    ui->gridLayout->getItemPosition(btnIndex, &rowOfButton, &columnOfButton, &rowSpanOfButton, &columnSpanOfButton);
-
-    // make sure the row and column match the button that sent the signal
-    QLayoutItem *item = ui->gridLayout->itemAtPosition(rowOfButton, columnOfButton);
-    QPushButton *clickedButton = qobject_cast<QPushButton*>(item->widget());
-    if (!clickedButton)
-    {
-        qDebug() << "Button does match row and column in layout";
-        return;
-    }
-
-    // the scene is the row + 1
-    //if (!mSd.SelectScene(rowOfButton + 1)
+    clickedButton->setStyleSheet("background-color:red");
 }
 
 void MainWindow::on_actionAlways_on_top_triggered()
@@ -148,6 +128,11 @@ void MainWindow::on_actionAlways_on_top_triggered()
 void MainWindow::on_editing_finished()
 {
     Save();
+}
+
+void MainWindow::on_page_changed(quint16 pageNo)
+{
+    ui->sbPageNo->setValue(pageNo);
 }
 
 void MainWindow::ShowErrorMessage(const QString &text, const QString &informativeText)

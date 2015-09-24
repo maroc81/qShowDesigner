@@ -18,14 +18,8 @@ void QLineEditLabel::showAsLabel()
 
 void QLineEditLabel::showAsLineEdit()
 {
-    QString style = ""\
-            "border: 2px solid gray;"
-            "border-radius: 2px;"
-            "padding: 0 8px;"
-            "background: white;"
-            "selection-background-color: darkgray;";
     setReadOnly(false);
-    setStyleSheet(style);
+    setStyleSheet("");
 }
 
 void QLineEditLabel::mouseDoubleClickEvent(QMouseEvent * event)

@@ -4,26 +4,51 @@
 #include <QtDebug>
 #include <QThread>
 
+#define START_BYTE 0xa5
+
+#define CMD_ID_START        0x01
+#define CMD_ID_PAGENO       0x02    // assuming this is the command to request current page no since response ID is 0x02
+#define CMD_ID_SCENES       0x03
+#define CMD_ID_FIXTURES     0x04
+#define CMD_ID_IDK          0x0b     // don't yet know what this id does but have seen the SD software use it
+#define CMD_ID_PAGE         0x0d
+#define CMD_ID_BTN          0x0f
 
 ShowDesigner::ShowDesigner(QObject *parent) :
-    QObject(parent),
+    QThread(parent),
+    mRun(false),
     mPort(this),
-    mSelectedScene(-1),
-    mIsConnected(false)
+    mIsConnected(false),
+    mPageNo(-1),
+    mSelectedScene(-1)
 {
 
 }
 
 ShowDesigner::~ShowDesigner()
 {
-
+    mRun = false;
+    QThread::msleep(100);
 }
 
+/**
+ * @brief ShowDesigner::ConnectToShowDesigner
+ * Performs connect sequence to establish connection to the
+ * show designer lighting controller
+ * @param port QString containing the port name
+ * @return
+ */
 bool ShowDesigner::ConnectToShowDesigner(const QString &port)
 {
     char req1[] = { 0x55, 0x25, 0x05 };
-    char req2[] = { 0xa5, 0x01 };
-    char resp[3];
+    char req2[] = { START_BYTE, CMD_ID_START };
+
+    // stop the receive thread if it's running
+    mRun = false;
+    if (!wait(1000UL))
+    {
+        qDebug() << "Read thread failed to exit";
+    }
 
     if ( mPort.isOpen() )
     {
@@ -85,7 +110,6 @@ bool ShowDesigner::ConnectToShowDesigner(const QString &port)
     mPort.setRequestToSend(false);
     mPort.write( req2, sizeof( req2 ));
 
-
     QByteArray dataFromSd;
     while ( dataFromSd.length() < 2 )
     {
@@ -112,13 +136,159 @@ bool ShowDesigner::ConnectToShowDesigner(const QString &port)
         mErrorString = "Connection to show designer succeeded";
         qDebug() << Q_FUNC_INFO << mErrorString;
         mIsConnected = true;
+        // start the read thread now that the port is open and connected
+        start();
+        // request the current page number
+        RequestPageNo();
         return true;
     }
 
     return false;
 }
 
-\
+/**
+ * @brief ShowDesigner::run
+ * Thread that reads and decodes output from Show Designer
+ */
+void ShowDesigner::run()
+{
+    mRun = true;
+    while (mRun)
+    {
+        if (mPort.waitForReadyRead(100))
+        {
+            QByteArray readData = mPort.readAll();
+            Decode(readData);
+        }
+    }
+}
+
+void ShowDesigner::Decode(QByteArray &data)
+{
+    enum decode_states {
+        eDecodeStart = 0,
+        eDecodeCmd,
+        eDecodeLengthLow,
+        eDecodeLengthHigh,
+        eDecodePayload
+    };
+
+    static enum decode_states state;
+
+    mReadData.append(data);
+
+    quint8 b;
+    foreach(b, mReadData )
+    {
+        switch( state )
+        {
+        case eDecodeStart:
+            if (b == START_BYTE)
+            {
+                mResp.start = b;
+                state = eDecodeCmd;
+            }
+            break;
+
+        case eDecodeCmd:
+            mResp.cmd = b;
+            state = eDecodeLengthLow;
+            break;
+
+        case eDecodeLengthLow:
+            mResp.length = b;
+            state = eDecodeLengthHigh;
+            break;
+
+        case eDecodeLengthHigh:
+            mResp.length |= b << 8;
+            if (mResp.length > 2048 || mResp.length < 1 )
+            {
+                qDebug() << "Command length " << mResp.length << " is invalid";
+                state = eDecodeStart;
+            }
+            else
+            {
+                mResp.payload.reserve((int)mResp.length);
+                state = eDecodePayload;
+            }
+            break;
+
+        case eDecodePayload:
+            mResp.payload.append(b);
+            if ( mResp.payload.size() >= mResp.length )
+            {
+                ProcessResp(mResp);
+                state = eDecodeStart;
+            }
+            break;
+
+        default:
+            state = eDecodeStart;
+            break;
+        }
+    }
+
+}
+
+bool ShowDesigner::ProcessResp(ShowDesignerResponse &resp)
+{
+    switch (resp.cmd)
+    {
+    case CMD_ID_PAGENO:
+        if (resp.payload.length() == 2)
+        {
+            quint16 pageNo;
+            pageNo = ((quint16)resp.payload[0]) << 8;
+            pageNo |= ((quint16)resp.payload[1]);
+            if (pageNo != mPageNo)
+            {
+                mPageNo = pageNo;
+                emit pageChanged(mPageNo);
+            }
+        }
+        else
+        {
+            qDebug() << "Invalid length for response id: " << resp.cmd;
+        }
+        break;
+
+    case CMD_ID_FIXTURES:
+
+        break;
+
+    case CMD_ID_SCENES:
+
+        break;
+    }
+}
+
+
+QString ShowDesigner::GetErrorString() const
+{
+    return mErrorString;
+}
+
+bool ShowDesigner::SendCmd(const char *data, qint64 count)
+{
+    qint64 retval;
+
+    if (!mPort.isOpen())
+    {
+        mErrorString = "Failed to send command: Port not open";
+        qDebug() << Q_FUNC_INFO << mErrorString;
+        return false;
+    }
+
+    retval = mPort.write(data, count);
+    if (retval != count )
+    {
+        mErrorString = "Failed to send command: " + mPort.errorString();
+        qDebug() << Q_FUNC_INFO << mErrorString;
+        return false;
+    }
+    return true;
+}
 
 /**
  * @brief ShowDesigner::SelectScene
@@ -128,86 +298,57 @@ bool ShowDesigner::ConnectToShowDesigner(const QString &port)
  */
 bool ShowDesigner::SelectScene(int scene)
 {
-    qint64 retval;
-
     // TODO: check if scene is already selected and
-    // prevent reselection in case that makes the scene go black
-
-    // clear any data still in the output or input buffers
-    if ( !mPort.clear() )
-    {
-        mErrorString = "Failed to clear port before selecting scene " + mPort.errorString();
-        qDebug() << Q_FUNC_INFO << mErrorString;
-    }
+    // prevent reselection since that will shut off all lights
+    // can't do this without some confirmation the scene has been selected
 
     // send select scene sequence
     // 0xa5 0x0f <scene no minus 1> 0x00
-    // 0x0f may correspond to the page number
-    char data[2048] = {0xa5, 0x0f, scene - 1, 0x00};
-
-    retval = mPort.write(data, 4);
-    if (retval != 4 )
-    {
-        mErrorString = "Write failed: can't select scene " + mPort.errorString();
-        qDebug() << Q_FUNC_INFO << mErrorString;
-        return false;
-    }
-
-    // after a scene is selected, it triggers a dump of the
-    // fixtures if fixture monitoring is enabled
-
-    return true;
+    const char cmd[] = {START_BYTE, CMD_ID_BTN, scene - 1, 0x00};
+    return SendCmd(cmd, sizeof(cmd));
 }
 
-QString ShowDesigner::GetErrorString() const
+
+bool ShowDesigner::RequestPageUp()
 {
-    return mErrorString;
+    // send page up command
+    // 0xa5 0x0d 0xff
+    const char cmd[] = {START_BYTE, CMD_ID_PAGE, 0xff};
+    return SendCmd(cmd, sizeof(cmd));
 }
 
-bool ShowDesigner::ReadFixtures()
+bool ShowDesigner::RequestPageDown()
 {
-    char data[2048] = {0};
-
-    //show designer responds with
-    // 0xa5 0x09 0x03 0x90 0x00 0xff
-    // plus a long sequence that may be the fixture
-    // channel settings after the scene is set
-    if (!mPort.waitForReadyRead(1000))
-    {
-        qDebug() << Q_FUNC_INFO << "Read failed: timed out waiting for response from lighting controller";
-        return false;
-    }
-
-    int retval = mPort.read(data, sizeof(data));
-    if (retval <= 0)
-    {
-        qDebug() << Q_FUNC_INFO << "Read data failed: readData returned " << retval;
-        qDebug() << mPort.errorString();
-    }
-
-    char resp[] = { 0xa5, 0x09, 0x03, 0x90, 0x00, 0xff };
-
-    QByteArray qData(data, retval);
-    QByteArray qResp(resp, sizeof(resp));
-
-    QByteArray qHex = qData.toHex();
-
-    qDebug() << Q_FUNC_INFO << qHex.toStdString().c_str();
-
-    if (qData.startsWith(qResp))
-    {
-        //qDebug() << Q_FUNC_INFO << "Scene " << scene <<" selected successfully";
-        //mSelectedScene = scene;
-        return true;
-    }
-    else
-    {
-        //qDebug() << Q_FUNC_INFO << "Scene " << scene << " NOT selected successfully";
-        return false;
-    }
+    // send page down command
+    // 0xa5 0x0d 0x00
+    const char cmd[] = {START_BYTE, CMD_ID_PAGE, 0x00};
+    return SendCmd(cmd, sizeof(cmd));
 }
 
-bool ShowDesigner::ParseFixture(QList<char> chars)
+bool ShowDesigner::RequestFixtures()
 {
-
+    // send fixtures command
+    // 0xa5 0x04 0xff
+    const char cmd[] = {START_BYTE, CMD_ID_FIXTURES, 0xff};
+    return SendCmd(cmd, sizeof(cmd));
 }
+
+bool ShowDesigner::RequestScenes(quint16 pageNo)
+{
+    // send scenes command
+    if (pageNo == 0)
+    {
+        pageNo = mPageNo;
+    }
+    pageNo = pageNo - 1;
+    const char cmd[] = {START_BYTE, CMD_ID_SCENES, pageNo >> 8, pageNo & 0xff};
+    return SendCmd(cmd, sizeof(cmd));
+}
+
+bool ShowDesigner::RequestPageNo()
+{
+    // send get page no command
+    const char cmd[] = {START_BYTE, CMD_ID_PAGENO, 0x00};
+    return SendCmd(cmd, sizeof(cmd));
+}
+
