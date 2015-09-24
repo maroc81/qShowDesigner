@@ -303,7 +303,6 @@ bool ShowDesigner::SelectScene(int scene)
     // can't do this without some confirmation the scene has been selected
 
     // send select scene sequence
-    // 0xa5 0x0f <scene no minus 1> 0x00
     const char cmd[] = {START_BYTE, CMD_ID_BTN, scene - 1, 0x00};
     return SendCmd(cmd, sizeof(cmd));
 }
@@ -312,7 +311,6 @@ bool ShowDesigner::SelectScene(int scene)
 bool ShowDesigner::RequestPageUp()
 {
     // send page up command
-    // 0xa5 0x0d 0xff
     const char cmd[] = {START_BYTE, CMD_ID_PAGE, 0xff};
     return SendCmd(cmd, sizeof(cmd));
 }
@@ -320,7 +318,6 @@ bool ShowDesigner::RequestPageUp()
 bool ShowDesigner::RequestPageDown()
 {
     // send page down command
-    // 0xa5 0x0d 0x00
     const char cmd[] = {START_BYTE, CMD_ID_PAGE, 0x00};
     return SendCmd(cmd, sizeof(cmd));
 }
@@ -328,7 +325,6 @@ bool ShowDesigner::RequestPageDown()
 bool ShowDesigner::RequestFixtures()
 {
     // send fixtures command
-    // 0xa5 0x04 0xff
     const char cmd[] = {START_BYTE, CMD_ID_FIXTURES, 0xff};
     return SendCmd(cmd, sizeof(cmd));
 }
