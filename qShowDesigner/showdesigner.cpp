@@ -7,11 +7,11 @@
 #define START_BYTE 0xa5
 
 #define CMD_ID_START        0x01
-#define CMD_ID_PAGENO       0x02    // assuming this is the command to request current page no since response ID is 0x02
+#define CMD_ID_PAGENO       0x02
 #define CMD_ID_SCENES       0x03
 #define CMD_ID_FIXTURES     0x04
 #define CMD_ID_IDK          0x0b     // don't yet know what this id does but have seen the SD software use it
-#define CMD_ID_PAGE         0x0d
+#define CMD_ID_PAGEUPDN     0x0d
 #define CMD_ID_BTN          0x0f
 
 ShowDesigner::ShowDesigner(QObject *parent) :
@@ -311,14 +311,14 @@ bool ShowDesigner::SelectScene(int scene)
 bool ShowDesigner::RequestPageUp()
 {
     // send page up command
-    const char cmd[] = {START_BYTE, CMD_ID_PAGE, 0xff};
+    const char cmd[] = {START_BYTE, CMD_ID_PAGEUPDN, 0xff};
     return SendCmd(cmd, sizeof(cmd));
 }
 
 bool ShowDesigner::RequestPageDown()
 {
     // send page down command
-    const char cmd[] = {START_BYTE, CMD_ID_PAGE, 0x00};
+    const char cmd[] = {START_BYTE, CMD_ID_PAGEUPDN, 0x00};
     return SendCmd(cmd, sizeof(cmd));
 }
 
@@ -344,7 +344,7 @@ bool ShowDesigner::RequestScenes(quint16 pageNo)
 bool ShowDesigner::RequestPageNo()
 {
     // send get page no command
-    const char cmd[] = {START_BYTE, CMD_ID_PAGENO, 0x00};
+    const char cmd[] = {START_BYTE, CMD_ID_PAGENO};
     return SendCmd(cmd, sizeof(cmd));
 }
 
