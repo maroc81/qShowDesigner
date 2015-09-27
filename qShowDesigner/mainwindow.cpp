@@ -132,7 +132,7 @@ void MainWindow::on_editing_finished()
 
 void MainWindow::on_page_changed(quint16 pageNo)
 {
-    ui->sbPageNo->setValue(pageNo);
+    ui->lePage->setText(QString::number((uint)pageNo));
 }
 
 void MainWindow::ShowErrorMessage(const QString &text, const QString &informativeText)
@@ -157,4 +157,12 @@ void MainWindow::Save()
     }
 }
 
+void MainWindow::on_btnDown_clicked()
+{
+    mSd.RequestPageDown();
+}
 
+void MainWindow::on_btnUp_clicked()
+{
+    mSd.RequestPageUp();
+}

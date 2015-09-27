@@ -231,21 +231,17 @@ void ShowDesigner::Decode(QByteArray &data)
 
 }
 
-bool ShowDesigner::ProcessResp(ShowDesignerResponse &resp)
+bool ShowDesigner::ProcessResp(Response &resp)
 {
     switch (resp.cmd)
     {
     case CMD_ID_PAGENO:
         if (resp.payload.length() == 2)
         {
-            quint16 pageNo;
-            pageNo = ((quint16)resp.payload[0]) << 8;
-            pageNo |= ((quint16)resp.payload[1]);
-            if (pageNo != mPageNo)
-            {
-                mPageNo = pageNo;
-                emit pageChanged(mPageNo);
-            }
+            mPageNo = ((quint16)resp.payload[0]) << 8;
+            mPageNo |= ((quint16)resp.payload[1]);
+            // emit signal whether page number actually changed
+            emit pageChanged(mPageNo);
         }
         else
         {
@@ -267,6 +263,11 @@ bool ShowDesigner::ProcessResp(ShowDesignerResponse &resp)
 QString ShowDesigner::GetErrorString() const
 {
     return mErrorString;
+}
+
+quint16 ShowDesigner::GetPageNo()
+{
+    return mPageNo;
 }
 
 bool ShowDesigner::SendCmd(const char *data, qint64 count)
@@ -336,6 +337,10 @@ bool ShowDesigner::RequestScenes(quint16 pageNo)
     {
         pageNo = mPageNo;
     }
+    if (pageNo == 0)
+    {
+        pageNo = 1;
+    }
     pageNo = pageNo - 1;
     const char cmd[] = {START_BYTE, CMD_ID_SCENES, pageNo >> 8, pageNo & 0xff};
     return SendCmd(cmd, sizeof(cmd));
@@ -346,5 +351,10 @@ bool ShowDesigner::RequestPageNo()
     // send get page no command
     const char cmd[] = {START_BYTE, CMD_ID_PAGENO};
     return SendCmd(cmd, sizeof(cmd));
+}
+
+Fixture ShowDesigner::ToFixture(Response &resp)
+{
+
 }
 

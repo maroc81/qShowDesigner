@@ -35,6 +35,10 @@ private slots:
 
     void on_page_changed(quint16 pageNo);
 
+    void on_btnDown_clicked();
+
+    void on_btnUp_clicked();
+
 private:
     void ShowErrorMessage(const QString &text, const QString &informativeText = "");
     void Save();

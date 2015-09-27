@@ -52,21 +52,32 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0,0">
       <item>
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="lblPage">
         <property name="text">
          <string>Page</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="sbPageNo">
+       <widget class="QLineEdit" name="lePage">
         <property name="readOnly">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
-        <property name="minimum">
-         <number>1</number>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnDown">
+        <property name="text">
+         <string>Down</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnUp">
+        <property name="text">
+         <string>Up</string>
         </property>
        </widget>
       </item>

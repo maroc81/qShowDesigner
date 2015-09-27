@@ -1,6 +1,8 @@
 #ifndef SHOWDESIGNER_H
 #define SHOWDESIGNER_H
 
+#include "fixture.h"
+
 #include <QThread>
 #include <QSerialPort>
 #include <QString>
@@ -14,34 +16,12 @@ class ShowDesigner : public QThread
 
 public:
 
-    class Channel
+    struct Response
     {
-    public:
-        Channel();
-        virtual ~Channel();
-
-    private:
-        QString mName;
-        quint8 mValue;
-        quint8 mNum;
-    };
-
-    /**
-     * @brief Container class for fixture data.
-     *
-     */
-    class Fixture
-    {
-    public:
-        Fixture();
-        virtual ~Fixture();
-        void SetChannel(int num, qint8 val);
-        qint8 GetChannel(int num);
-        void SetName(const QString &name);
-        QString GetName();
-    private:
-        QList<Channel> mChannels;
-        QString mName;
+        quint8 start;
+        quint8 cmd;
+        qint16 length;
+        QByteArray payload;
     };
 
     explicit ShowDesigner(QObject *parent = 0);
@@ -61,9 +41,9 @@ public:
     bool RequestScenes(quint16 pageNo = 0);
     bool RequestPageNo();
 
+    Fixture ToFixture(struct Response &resp);
 
 signals:
-
     void pageChanged(quint16 pageNo);
 
 protected:
@@ -71,17 +51,9 @@ protected:
 
 private:
 
-    struct ShowDesignerResponse
-    {
-        quint8 start;
-        quint8 cmd;
-        qint16 length;
-        QByteArray payload;
-    };
-
     void Decode(QByteArray &data);
-    bool ProcessResp(struct ShowDesignerResponse &resp);
-    bool ParseFixture(struct ShowDesignerResponse &resp);
+    bool ProcessResp(struct Response &resp);
+    bool ParseFixture(struct Response &resp);
 
     bool mRun;
     QSerialPort mPort;
@@ -90,7 +62,7 @@ private:
     QByteArray mReadData;
     QList<Fixture> mFixtures;
 
-    struct ShowDesignerResponse mResp;
+    struct Response mResp;
 
     // selected page number on the controller
     qint16 mPageNo;

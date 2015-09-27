@@ -17,12 +17,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     serialconfig.cpp \
     showdesigner.cpp \
-    qlineeditlabel.cpp
+    qlineeditlabel.cpp \
+    fixture.cpp
 
 HEADERS  += mainwindow.h \
     serialconfig.h \
     showdesigner.h \
-    qlineeditlabel.h
+    qlineeditlabel.h \
+    fixture.h
 
 FORMS    += mainwindow.ui \
     serialconfig.ui
