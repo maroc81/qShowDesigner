@@ -34,7 +34,7 @@ public:
 
     bool SendCmd(const char *data, qint64 count);
 
-    bool SelectScene(int scene);
+    bool PushButton(int button);
     bool RequestPageUp();
     bool RequestPageDown();
     bool RequestFixtures();
@@ -59,15 +59,14 @@ private:
     QSerialPort mPort;
     bool mIsConnected;
     QString mErrorString;
-    QByteArray mReadData;
     QList<Fixture> mFixtures;
 
     struct Response mResp;
 
     // selected page number on the controller
     qint16 mPageNo;
-    // selected scene
-    int mSelectedScene;
+    // last button "pushed"
+    int mPushedButton;
 
 };
 

@@ -19,9 +19,9 @@ Hello? | 01 | Appears to be a "hello" or "ping" command. The command and respons
 Page No | 02 | Requests the currently selected page number.  The response is the page number minus 1.
 Scenes | 03 | Requests all programmed scenes and their names for the given page number.
 Fixtures | 04 | Requests all fixtures and their details.
-Unknown | 0b | Currently unknown.  
+Unknown | 0b | This command and response have been observed but the function is currently unknown.  
 Change Page | 0d | Changes page up or down based on argument.
-Select Scene | 0f | Selects the specified scene.
+Push Button | 0f | "Pushes" one of the numbered buttons on show designer.
 
 ## Connect Sequence
 
@@ -31,12 +31,12 @@ Before the Show Designer will respond to commands, the connect sequence must be 
 2. Change serial port to 1200 8n1 no flow control
 3. Set RTS true (assert)
 4. Set RTS false (deassert)
-5. Send sequence 55 25 05
+5. Send sequence 0x55 0x25 0x05
 6. Set port to 38400 8n1 no flow control
 7. Wait 1 second
 8. Set RTS false twice
-9. Send a5 01
-10. Wait for a5 01 response
+9. Send 0xa5 0x01
+10. Wait for 0xa5 0x01 response
 
 # Commands
 
@@ -78,8 +78,8 @@ a5 | Start byte
 02 | Page Number response ID byte
 02 | Response length low byte
 00 | Response length high byte
-?? | Current page number minus 1 high byte
-?? | Current page number minus 1 low byte
+xx | Current page number minus 1 high byte
+xx | Current page number minus 1 low byte
 
 ## Page Up/Down
 
@@ -109,8 +109,8 @@ Byte | Description
 ----- | ------
 a5 | Start byte
 03 | Request Scenes ID
-?? | Scene page number minus 1 high byte
-?? | Scene page number minus 1 low byte
+xx | Scene page number minus 1 high byte
+xx | Scene page number minus 1 low byte
 
 ### Response
 
@@ -120,12 +120,12 @@ a5 | Start byte
 03 | Request Scenes ID
 05 | Response length low byte
 03 | Response length high bye
-?? | Scene page number minus 1 high byte
-?? | Scene page number minus 1 low byte
+xx | Scene page number minus 1 high byte
+xx | Scene page number minus 1 low byte
 00 | Number of scenes in response high byte
 30 | Number of scenes in response low byte
 10 | Unsure but appears to be the length of each scene name
-?? | Scene names which are a fixed number of characters for each scene
+xx | Scene names which are a fixed number of characters for each scene
 
 ## Request Fixtures
 ### Description
@@ -136,44 +136,44 @@ Byte | Description
 ----- | ------
 a5 | Start byte
 04 | Request Fixtures ID
-ff | ???
+ff | xx?
 
 ### Response
 Byte | Description
 ----- | ------
 a5 | Start byte
 04 | Request Fixtures ID
-?? | Response length low byte
-?? | Response length high byte
-?? | Fixture number/id
-?? | Fixture type
-?? | Number of channels high byte
-?? | Number of channels low byte
-?? | Unknown 
-?? | Unknown
-?? | Unknown
-?? | Unknown
-?? | Unknown
+xx | Response length low byte
+xx | Response length high byte
+xx | Fixture number/id
+xx | Fixture type
+xx | Number of channels high byte
+xx | Number of channels low byte
+xx | Unknown 
+xx | Unknown
+xx | Unknown
+xx | Unknown
+xx | Unknown
 ff | Unknown
 ff | Unknown
 ff | Unknown
 ff | Unknown
-?? | Name 16 bytes long padded with spaces to the end 
-?? | 16 bytes of null?
-?? | 16 bytes of null?
-?? | Number of channels?
-?? | 8 bytes for each channel name with spaces padding beginning and end to center the name
+xx | Name 16 bytes long padded with spaces to the end 
+xx | 16 bytes of null?
+xx | 16 bytes of null?
+xx | Number of channels?
+xx | 8 bytes for each channel name with spaces padding beginning and end to center the name
 
-## Select Scene
+## Push Button
 ### Description
-Selects the scene for the current page.
+Peforms the same action as pushing one of the numbered buttons on the show designer. What happens will be determined by what mode the show designer is in.  If it's in scene mode, the scene programmed to that button will be activated. If it's in fixture mode, that fixture will be selected.
 
 ### Command
 Byte | Description
 ----- | ------
 a5 | Start byte
-0f | Request Fixtures ID
-?? | Scene number - 1
+0f | Push Button ID
+xx | Button number minus 1
 00 | Unknown
 
 ### Response

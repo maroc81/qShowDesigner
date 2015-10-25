@@ -7,15 +7,23 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QLayout>
+#include <QStandardPaths>
+
+#define SETTING_BTNLBL "buttonLabel/"
+#define SETTING_WINDOW "window/"
 
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     mSd(parent),
-    mSettings("IconuxTech","qShowDesigner")
+    mSettings("iconux.org","qShowDesigner")
 {
     ui->setupUi(this);
+
+    //QString configpath = QStandardPaths::standardLocations(QStandardPaths::ConfigLocation).first();
+    //mSettings = new QSettings(configpath + "/qShowDesigner.ini", QSettings::IniFormat);
+    //qDebug() << "Loaded config file " <<  configpath + "/qShowDesigner.ini";
 
     mStatusLabel = new QLabel(this);
     ui->statusBar->addWidget(mStatusLabel, 1);
@@ -24,12 +32,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->gridLayout->setColumnStretch(1,1);
 
+    // set each button text to numbers 1 through 12
+    // load each button label text from settings or initialize to Scene #
     for(int row = 0; row < 12; row++)
     {
-        QString rowStr = QString::number(row+1);
-        QString lblText = "Scene " + rowStr;
+        QString btnStr = QString::number(row+1);
+        QString lblText = "Scene " + btnStr;
 
-        QPushButton *sceneBtn = new QPushButton(rowStr, this);
+        QPushButton *sceneBtn = new QPushButton(btnStr, this);
         sceneBtn->setMaximumWidth(50);
         ui->gridLayout->addWidget(sceneBtn, row, 0);
         // connect each button to the same slot which selects the scene
@@ -37,10 +47,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
         QLineEditLabel *lel = new QLineEditLabel(this);
         lel->showAsLabel();
-        lel->setText( mSettings.value("rowLabel/"+rowStr, lblText).toString());
+        lel->setText( mSettings.value(SETTING_BTNLBL + btnStr, lblText).toString());
         ui->gridLayout->addWidget(lel, row, 1);
         connect( lel, SIGNAL(editingFinished()), this, SLOT(on_editing_finished()));
     }
+
+    // load always on top setting
+    ui->actionAlways_on_top->setChecked(mSettings.value(SETTING_WINDOW "alwaysontop", false).toBool());
 
     /*for(int row = 0; row < ui->gridLayout->rowCount(); row++)
     {
@@ -101,7 +114,7 @@ void MainWindow::on_btn_num_released()
 
     qDebug() << "Button " << btnNum << " was released";
 
-    if (!mSd.SelectScene(btnNum))
+    if (!mSd.PushButton(btnNum))
     {
         ui->statusBar->showMessage("Failed to set scene");
     }
@@ -117,11 +130,20 @@ void MainWindow::on_btn_num_released()
 
 void MainWindow::on_actionAlways_on_top_triggered()
 {
-    //if (windowStaysOnTopCheckBox->isChecked())
-           //flags |= Qt::WindowStaysOnTopHint;
-    Qt::WindowFlags flags;
-    setWindowFlags(Qt::WindowStaysOnTopHint);
-    //Qt::X11BypassWindowManagerHint for this flag to work correctly
+    Qt::WindowFlags flags = windowFlags();
+    if (ui->actionAlways_on_top->isChecked())
+    {
+       flags |= Qt::WindowStaysOnTopHint;
+       // for Linux/X11, need to also set flag to bypass window manager
+       //flags |= Qt::X11BypassWindowManagerHint;
+    }
+    else
+    {
+        flags &= ~Qt::WindowStaysOnTopHint;
+        //flags &= ~Qt::X11BypassWindowManagerHint;
+    }
+    mSettings.setValue(SETTING_WINDOW "alwaysontop", ui->actionAlways_on_top->isChecked());
+    setWindowFlags(flags);
     show();
 }
 
@@ -153,8 +175,10 @@ void MainWindow::Save()
         QString rowStr = QString::number(row+1);
         QLayoutItem *item = ui->gridLayout->itemAtPosition(row, 1);
         QLineEditLabel *label = qobject_cast<QLineEditLabel*> (item->widget());
-        mSettings.setValue("rowLabel/"+rowStr, label->text());
+        mSettings.setValue(SETTING_BTNLBL + rowStr, label->text());
     }
+    mSettings.sync();
+    qDebug() << mSettings.status();
 }
 
 void MainWindow::on_btnDown_clicked()

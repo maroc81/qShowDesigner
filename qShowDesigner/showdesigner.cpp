@@ -4,7 +4,7 @@
 #include <QtDebug>
 #include <QThread>
 
-#define START_BYTE 0xa5
+#define START_BYTE          ((char)0xa5)
 
 #define CMD_ID_START        0x01
 #define CMD_ID_PAGENO       0x02
@@ -20,7 +20,7 @@ ShowDesigner::ShowDesigner(QObject *parent) :
     mPort(this),
     mIsConnected(false),
     mPageNo(-1),
-    mSelectedScene(-1)
+    mPushedButton(-1)
 {
 
 }
@@ -113,7 +113,7 @@ bool ShowDesigner::ConnectToShowDesigner(const QString &port)
     QByteArray dataFromSd;
     while ( dataFromSd.length() < 2 )
     {
-        if (!mPort.waitForReadyRead(100))
+        if (!mPort.waitForReadyRead(1000))
         {
             mErrorString = "Read failed: timed out waiting for connect response from lighting controller";
             qDebug() << Q_FUNC_INFO << mErrorString;
@@ -129,7 +129,7 @@ bool ShowDesigner::ConnectToShowDesigner(const QString &port)
         }
     }
 
-    qDebug() << "Read response from lighting controller " << dataFromSd;
+    qDebug() << "Read response from lighting controller " << dataFromSd.toHex();
     QByteArray cmp(req2, 2);
     if ( dataFromSd.startsWith(cmp))
     {
@@ -175,10 +175,8 @@ void ShowDesigner::Decode(QByteArray &data)
 
     static enum decode_states state;
 
-    mReadData.append(data);
-
     quint8 b;
-    foreach(b, mReadData )
+    foreach(b, data )
     {
         switch( state )
         {
@@ -192,7 +190,15 @@ void ShowDesigner::Decode(QByteArray &data)
 
         case eDecodeCmd:
             mResp.cmd = b;
-            state = eDecodeLengthLow;
+            if (mResp.cmd == CMD_ID_START)
+            {
+                // the start command has no payload
+                state = eDecodeCmd;
+            }
+            else
+            {
+                state = eDecodeLengthLow;
+            }
             break;
 
         case eDecodeLengthLow:
@@ -209,7 +215,7 @@ void ShowDesigner::Decode(QByteArray &data)
             }
             else
             {
-                mResp.payload.reserve((int)mResp.length);
+                mResp.payload.clear();
                 state = eDecodePayload;
             }
             break;
@@ -228,11 +234,13 @@ void ShowDesigner::Decode(QByteArray &data)
             break;
         }
     }
-
+    data.clear();
 }
 
 bool ShowDesigner::ProcessResp(Response &resp)
 {
+    qDebug() << "Processing response for command " << resp.cmd << " with payload " << resp.payload.toHex();
+
     switch (resp.cmd)
     {
     case CMD_ID_PAGENO:
@@ -240,12 +248,13 @@ bool ShowDesigner::ProcessResp(Response &resp)
         {
             mPageNo = ((quint16)resp.payload[0]) << 8;
             mPageNo |= ((quint16)resp.payload[1]);
+            mPageNo++;
             // emit signal whether page number actually changed
             emit pageChanged(mPageNo);
         }
         else
         {
-            qDebug() << "Invalid length for response id: " << resp.cmd;
+            qDebug() << "Invalid length " << resp.payload.length() << " for response id: " << resp.cmd;
         }
         break;
 
@@ -292,19 +301,18 @@ bool ShowDesigner::SendCmd(const char *data, qint64 count)
 }
 
 /**
- * @brief ShowDesigner::SelectScene
+ * @brief ShowDesigner::PushButton "pushes" a numbered button on the show designer.
  *
- * @param scene
+ * @param button the button number to push
  * @return
  */
-bool ShowDesigner::SelectScene(int scene)
+bool ShowDesigner::PushButton(int button)
 {
-    // TODO: check if scene is already selected and
-    // prevent reselection since that will shut off all lights
-    // can't do this without some confirmation the scene has been selected
+    // TODO: add option to check if button is already pushed and
+    // prevent pushing again to prevent going "black" when in scene mode
 
-    // send select scene sequence
-    const char cmd[] = {START_BYTE, CMD_ID_BTN, scene - 1, 0x00};
+    // send push button sequence
+    const char cmd[] = {START_BYTE, CMD_ID_BTN, ((quint8)button) - 1, 0x00};
     return SendCmd(cmd, sizeof(cmd));
 }
 
@@ -312,7 +320,7 @@ bool ShowDesigner::SelectScene(int scene)
 bool ShowDesigner::RequestPageUp()
 {
     // send page up command
-    const char cmd[] = {START_BYTE, CMD_ID_PAGEUPDN, 0xff};
+    const char cmd[] = {START_BYTE, CMD_ID_PAGEUPDN, (char)0xff};
     return SendCmd(cmd, sizeof(cmd));
 }
 
@@ -326,7 +334,7 @@ bool ShowDesigner::RequestPageDown()
 bool ShowDesigner::RequestFixtures()
 {
     // send fixtures command
-    const char cmd[] = {START_BYTE, CMD_ID_FIXTURES, 0xff};
+    const char cmd[] = {START_BYTE, CMD_ID_FIXTURES, (char)0xff};
     return SendCmd(cmd, sizeof(cmd));
 }
 
