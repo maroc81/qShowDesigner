@@ -19,8 +19,12 @@ Hello? | 01 | Appears to be a "hello" or "ping" command. The command and respons
 Page No | 02 | Requests the currently selected page number.  The response is the page number minus 1.
 Scenes | 03 | Requests all programmed scenes and their names for the given page number.
 Fixtures | 04 | Requests all fixtures and their details.
-Unknown | 0b | This command and response have been observed but the function is currently unknown.  
+Set Fixture Channel | 08 | Sets fixture channel value
+Unknown Response | 09 | Unknown response to commands 0b and 0f.
+Unknown | 0b | This command and 09 response have been observed but the function is currently unknown. This command appears to be related to information for a fixture as it is sent by SD monitor when double click a fixture (or maybe when you go to View->Fixtures).
+Unknown Response | 0c | Unknown response to command 0b.
 Change Page | 0d | Changes page up or down based on argument.
+Select Function | 0e | Selects one of the functions such as fixture or scene 
 Push Button | 0f | "Pushes" one of the numbered buttons on show designer.
 
 ## Connect Sequence
@@ -136,7 +140,7 @@ Byte | Description
 ----- | ------
 a5 | Start byte
 04 | Request Fixtures ID
-ff | xx?
+ff | unknown
 
 ### Response
 Byte | Description
@@ -164,6 +168,59 @@ xx | 16 bytes of null?
 xx | Number of channels?
 xx | 8 bytes for each channel name with spaces padding beginning and end to center the name
 
+## Set Fixture Channel Value
+### Description
+Sets a fixture's DMX channel value.
+
+### Command
+Byte | Description
+----- | ------
+a5 | Start byte
+08 | Command ID byte
+xx | Fixture number minus 1
+xx | Channel to set
+xx | Value of channel to set
+
+### Response
+Byte | Description
+----- | ------
+a5 | Start byte
+08 | Command ID byte
+xx | Response length low byte
+xx | Response length high byte
+xx | Fixture number minus 1
+xx | Channel set
+xx | New value of channel
+
+## Select Function
+### Description
+Selects the function/mode of the controller.  When in different modes, the numbered buttons perform different functions. 
+
+Function | Description
+---------| -----------
+00 | Scene
+01 | TBD (Shows?)
+02 | TBD (Chase?)
+03 | TBD (Preset?)
+04 | Fixture
+05 | Fixture Group?
+
+### Command
+Byte | Description
+----- | ------
+a5 | Start byte
+0e | Command ID byte
+xx | Function to select
+
+### Response
+Byte | Description
+----- | ------
+a5 | Start byte
+0e | Command ID byte
+xx | Response length low byte
+xx | Response length high byte
+xx | Selected function
+
 ## Push Button
 ### Description
 Peforms the same action as pushing one of the numbered buttons on the show designer. What happens will be determined by what mode the show designer is in.  If it's in scene mode, the scene programmed to that button will be activated. If it's in fixture mode, that fixture will be selected.
@@ -177,7 +234,7 @@ xx | Button number minus 1
 00 | Unknown
 
 ### Response
-No response
+A response is sometimes returned with ID 0x09.
 
 ## Unknown command with ID 0b
 ### Description

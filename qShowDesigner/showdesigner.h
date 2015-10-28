@@ -33,8 +33,8 @@ public:
     quint16 GetPageNo();
 
     bool SendCmd(const char *data, qint64 count);
-
     bool PushButton(int button);
+    bool SelectScene(int scene);
     bool RequestPageUp();
     bool RequestPageDown();
     bool RequestFixtures();
@@ -59,6 +59,7 @@ private:
     QSerialPort mPort;
     bool mIsConnected;
     QString mErrorString;
+    QByteArray mReadData;
     QList<Fixture> mFixtures;
 
     struct Response mResp;
@@ -67,6 +68,8 @@ private:
     qint16 mPageNo;
     // last button "pushed"
     int mPushedButton;
+    // selected scene
+    int mSelectedScene;
 
 };
 

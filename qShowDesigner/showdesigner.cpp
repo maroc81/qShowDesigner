@@ -128,7 +128,6 @@ bool ShowDesigner::ConnectToShowDesigner(const QString &port)
             return false;
         }
     }
-
     qDebug() << "Read response from lighting controller " << dataFromSd.toHex();
     QByteArray cmp(req2, 2);
     if ( dataFromSd.startsWith(cmp))

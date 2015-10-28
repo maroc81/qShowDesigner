@@ -12,7 +12,6 @@
 #define SETTING_BTNLBL "buttonLabel/"
 #define SETTING_WINDOW "window/"
 
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -114,6 +113,7 @@ void MainWindow::on_btn_num_released()
 
     qDebug() << "Button " << btnNum << " was released";
 
+
     if (!mSd.PushButton(btnNum))
     {
         ui->statusBar->showMessage("Failed to set scene");
@@ -143,7 +143,6 @@ void MainWindow::on_actionAlways_on_top_triggered()
         //flags &= ~Qt::X11BypassWindowManagerHint;
     }
     mSettings.setValue(SETTING_WINDOW "alwaysontop", ui->actionAlways_on_top->isChecked());
-    setWindowFlags(flags);
     show();
 }
 
