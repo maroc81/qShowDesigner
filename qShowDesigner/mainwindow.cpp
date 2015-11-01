@@ -169,7 +169,7 @@ void MainWindow::ShowErrorMessage(const QString &text, const QString &informativ
 void MainWindow::Save()
 {
     qDebug() << "Saving settings";
-    for (int row; row < ui->gridLayout->rowCount(); row++)
+    for (int row = 0; row < ui->gridLayout->rowCount(); row++)
     {
         QString rowStr = QString::number(row+1);
         QLayoutItem *item = ui->gridLayout->itemAtPosition(row, 1);
