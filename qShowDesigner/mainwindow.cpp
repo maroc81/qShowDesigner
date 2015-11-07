@@ -53,20 +53,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // load always on top setting
     ui->actionAlways_on_top->setChecked(mSettings.value(SETTING_WINDOW "alwaysontop", false).toBool());
-
-    /*for(int row = 0; row < ui->gridLayout->rowCount(); row++)
-    {
-        QLayoutItem *item = ui->gridLayout->itemAtPosition(row, 1);
-
-        QLineEditLabel *label = qobject_cast<QLineEditLabel*> (item->widget());
-        if ( !label )
-        {
-            continue;
-        }
-        QString lblText = "Scene " + QString::number(row+1);
-        label->setText( lblText );
-    }*/
-
     connect( &mSd, SIGNAL(pageChanged(quint16)), this, SLOT(on_page_changed(quint16)));
 }
 
@@ -135,13 +121,14 @@ void MainWindow::on_actionAlways_on_top_triggered()
     {
        flags |= Qt::WindowStaysOnTopHint;
        // for Linux/X11, need to also set flag to bypass window manager
-       //flags |= Qt::X11BypassWindowManagerHint;
+       // flags |= Qt::X11BypassWindowManagerHint;
     }
     else
     {
         flags &= ~Qt::WindowStaysOnTopHint;
-        //flags &= ~Qt::X11BypassWindowManagerHint;
+        // flags &= ~Qt::X11BypassWindowManagerHint;
     }
+    setWindowFlags( flags );
     mSettings.setValue(SETTING_WINDOW "alwaysontop", ui->actionAlways_on_top->isChecked());
     show();
 }
