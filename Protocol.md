@@ -196,6 +196,7 @@ xx | New value of channel
 ### Description
 Selects the function/mode of the controller.  When in different modes, the numbered buttons perform different functions. 
 
+### Command
 Function | Description
 ---------| -----------
 00 | Scene
