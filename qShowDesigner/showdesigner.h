@@ -16,6 +16,14 @@ class ShowDesigner : public QThread
 
 public:
 
+    enum Functions
+    {
+        eUnknown = -1,
+        eScene = 0,
+        eFixture = 4,
+        eFixtureGroup = 5
+    };
+
     struct Response
     {
         quint8 start;
@@ -40,6 +48,7 @@ public:
     bool RequestFixtures();
     bool RequestScenes(quint16 pageNo = 0);
     bool RequestPageNo();
+    bool SelectFunction( enum Functions func);
 
     Fixture ToFixture(struct Response &resp);
 
@@ -70,6 +79,8 @@ private:
     int mPushedButton;
     // selected scene
     int mSelectedScene;
+    // current function
+    enum Functions mFunc;
 
 };
 

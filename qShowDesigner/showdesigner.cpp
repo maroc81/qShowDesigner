@@ -10,8 +10,10 @@
 #define CMD_ID_PAGENO       0x02
 #define CMD_ID_SCENES       0x03
 #define CMD_ID_FIXTURES     0x04
+#define CMD_ID_SETCHAN      0x08
 #define CMD_ID_IDK          0x0b     // don't yet know what this id does but have seen the SD software use it
 #define CMD_ID_PAGEUPDN     0x0d
+#define CMD_ID_FUNCTION     0x0e
 #define CMD_ID_BTN          0x0f
 
 ShowDesigner::ShowDesigner(QObject *parent) :
@@ -92,7 +94,9 @@ bool ShowDesigner::ConnectToShowDesigner(const QString &port)
     // 7. Wait 1 second
     // 8. Set RTS false (twice, don't know why)
     // 9. Send 0xa5 0x01
-    // 10. Read 0xa5 0x01
+    // 10. If connect sequence hasn't been performed
+    //     since last power on we read 0x55 0x25 0x05
+    // 11. Read 0xa5 0x01
 
     mPort.setBaudRate(QSerialPort::Baud1200);
     mPort.setDataBits(QSerialPort::Data7);
@@ -111,26 +115,25 @@ bool ShowDesigner::ConnectToShowDesigner(const QString &port)
     mPort.write( req2, sizeof( req2 ));
 
     QByteArray dataFromSd;
-    while ( dataFromSd.length() < 2 )
+    // read up to 5 characters
+    while ( dataFromSd.length() < 5 )
     {
         if (!mPort.waitForReadyRead(1000))
         {
-            mErrorString = "Read failed: timed out waiting for connect response from lighting controller";
-            qDebug() << Q_FUNC_INFO << mErrorString;
-            return false;
+            break;
         }
-        QByteArray tmpba = mPort.readAll();
-        dataFromSd.append(tmpba);
-        if ( dataFromSd.length() == 0 )
-        {
-            mErrorString = "Read failed: read from lighting controller failed";
-            qDebug() << Q_FUNC_INFO << mErrorString;
-            return false;
-        }
+        dataFromSd.append(mPort.readAll());
     }
+
     qDebug() << "Read response from lighting controller " << dataFromSd.toHex();
+    if ( dataFromSd.length() == 0 )
+    {
+        mErrorString = "Read failed: timed out waiting for connect response from lighting controller";
+        qDebug() << Q_FUNC_INFO << mErrorString;
+        return false;
+    }
     QByteArray cmp(req2, 2);
-    if ( dataFromSd.startsWith(cmp))
+    if ( dataFromSd.endsWith(cmp))
     {
         mErrorString = "Connection to show designer succeeded";
         qDebug() << Q_FUNC_INFO << mErrorString;
@@ -140,6 +143,13 @@ bool ShowDesigner::ConnectToShowDesigner(const QString &port)
         // request the current page number
         RequestPageNo();
         return true;
+    }
+    else
+    {
+        mErrorString = "Invalid response from show designer";
+        qDebug() << Q_FUNC_INFO << mErrorString << ": " << dataFromSd.toHex();
+        mIsConnected = false;
+        return false;
     }
 
     return false;
@@ -264,6 +274,17 @@ bool ShowDesigner::ProcessResp(Response &resp)
     case CMD_ID_SCENES:
 
         break;
+
+    case CMD_ID_FUNCTION:
+        if (resp.payload.length() == 1)
+        {
+            char func = resp.payload[0];
+            mFunc = (enum Functions) func;
+        }
+        else
+        {
+            qDebug() << "Invalid length " << resp.payload.length() << " for response id: " << resp.cmd;
+        }
     }
 }
 
@@ -357,6 +378,12 @@ bool ShowDesigner::RequestPageNo()
 {
     // send get page no command
     const char cmd[] = {START_BYTE, CMD_ID_PAGENO};
+    return SendCmd(cmd, sizeof(cmd));
+}
+
+bool ShowDesigner::SelectFunction(Functions func)
+{
+    const char cmd[] = {START_BYTE, CMD_ID_FUNCTION, (char) func};
     return SendCmd(cmd, sizeof(cmd));
 }
 
