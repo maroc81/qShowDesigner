@@ -31,6 +31,24 @@ qint8 Fixture::GetChannelValue(int num)
     return mChannels[num].mValue;
 }
 
+void Fixture::SetId(quint8 id)
+{
+    mId = id;
+}
+
+quint8 Fixture::GetId()
+{
+    return mId;
+}
+
+void Fixture::SetType(quint8 type)
+{
+    mType = type;
+}
+quint8 Fixture::GetType()
+{
+    return mType;
+}
 
 Fixture::Channel::Channel()
 {

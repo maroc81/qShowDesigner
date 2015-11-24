@@ -119,9 +119,9 @@ void MainWindow::on_actionAlways_on_top_triggered()
     Qt::WindowFlags flags = windowFlags();
     if (ui->actionAlways_on_top->isChecked())
     {
-       flags |= Qt::WindowStaysOnTopHint;
-       // for Linux/X11, need to also set flag to bypass window manager
-       // flags |= Qt::X11BypassWindowManagerHint;
+        flags |= Qt::WindowStaysOnTopHint;
+        // for Linux/X11, need to also set flag to bypass window manager
+        // flags |= Qt::X11BypassWindowManagerHint;
     }
     else
     {

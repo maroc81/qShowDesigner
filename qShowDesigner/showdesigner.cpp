@@ -268,9 +268,15 @@ bool ShowDesigner::ProcessResp(Response &resp)
         break;
 
     case CMD_ID_FIXTURES:
+    {
+        Fixture fix;
+        if ( ToFixture( resp, fix ))
+        {
+            // add fixture to list of fixtures
+        }
 
         break;
-
+    }
     case CMD_ID_SCENES:
 
         break;
@@ -286,6 +292,7 @@ bool ShowDesigner::ProcessResp(Response &resp)
             qDebug() << "Invalid length " << resp.payload.length() << " for response id: " << resp.cmd;
         }
     }
+    return false;
 }
 
 
@@ -332,7 +339,7 @@ bool ShowDesigner::PushButton(int button)
     // prevent pushing again to prevent going "black" when in scene mode
 
     // send push button sequence
-    const char cmd[] = {START_BYTE, CMD_ID_BTN, ((quint8)button) - 1, 0x00};
+    const char cmd[] = {START_BYTE, CMD_ID_BTN, (char)(((quint8)button) - 1), 0x00};
     return SendCmd(cmd, sizeof(cmd));
 }
 
@@ -370,7 +377,7 @@ bool ShowDesigner::RequestScenes(quint16 pageNo)
         pageNo = 1;
     }
     pageNo = pageNo - 1;
-    const char cmd[] = {START_BYTE, CMD_ID_SCENES, pageNo >> 8, pageNo & 0xff};
+    const char cmd[] = {START_BYTE, CMD_ID_SCENES, (char)(pageNo >> 8), (char)( pageNo & 0xff)};
     return SendCmd(cmd, sizeof(cmd));
 }
 
@@ -387,8 +394,38 @@ bool ShowDesigner::SelectFunction(Functions func)
     return SendCmd(cmd, sizeof(cmd));
 }
 
-Fixture ShowDesigner::ToFixture(Response &resp)
+bool ShowDesigner::ToFixture(Response &resp, Fixture &fix)
 {
+    // fixture response with at least 1 channel is 70 bytes long
+    // fixture ids/buttons that aren't assigned will be less than 70 bytes
+    if (resp.length < 70)
+    {
+        qDebug() << Q_FUNC_INFO << " Invalid length of fixture response: " << resp.length;
+        return false;
+    }
 
+    fix.SetId(resp.payload[0]);
+    fix.SetType(resp.payload[1]);
+
+    quint16 numChannels = resp.payload.mid(2,2).toUShort();
+    QString name = QString::fromStdString( resp.payload.mid(13,16).toStdString() );
+    fix.SetName( name );
+
+    qDebug() << Q_FUNC_INFO << " Read fixture with name: " << fix.GetName() << " id: " << fix.GetId() << " type: " << fix.GetType();
+
+    // channels are 8 bytes each and start at byte 62
+    if ( (numChannels * 8 ) + 62  < resp.length)
+    {
+        qDebug() << Q_FUNC_INFO << "Invalid length: " << resp.length << " for number of channels: " << numChannels;
+        return false;
+    }
+
+   /* QMap<quint8, Fixture::Channel> channels;
+    for ( int i = 0; i << numChannels; i++ )
+    {
+        channels[]
+    }*/
+
+    return true;
 }
 
