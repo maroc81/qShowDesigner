@@ -182,9 +182,9 @@ void ShowDesigner::Decode(QByteArray &data)
         eDecodePayload
     };
 
-    static enum decode_states state;
+    static enum decode_states state = eDecodeStart;
 
-    quint8 b;
+    char b;
     foreach(b, data )
     {
         switch( state )
