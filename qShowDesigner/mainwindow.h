@@ -39,6 +39,8 @@ private slots:
 
     void on_btnUp_clicked();
 
+    void on_actionFixtures_triggered();
+
 private:
     void ShowErrorMessage(const QString &text, const QString &informativeText = "");
     void Save();

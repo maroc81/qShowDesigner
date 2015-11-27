@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "serialconfig.h"
+#include "fixtures.h"
 #include "qlineeditlabel.h"
 
 #include <QtDebug>
@@ -175,4 +176,10 @@ void MainWindow::on_btnDown_clicked()
 void MainWindow::on_btnUp_clicked()
 {
     mSd.RequestPageUp();
+}
+
+void MainWindow::on_actionFixtures_triggered()
+{
+    Fixtures fix( &mSd, this );
+    fix.exec();
 }

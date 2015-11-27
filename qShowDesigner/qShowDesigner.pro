@@ -18,15 +18,20 @@ SOURCES += main.cpp\
     serialconfig.cpp \
     showdesigner.cpp \
     qlineeditlabel.cpp \
-    fixture.cpp
+    fixture.cpp \
+    fixtures.cpp \
+    qchannelslider.cpp
 
 HEADERS  += mainwindow.h \
     serialconfig.h \
     showdesigner.h \
     qlineeditlabel.h \
-    fixture.h
+    fixture.h \
+    fixtures.h \
+    qchannelslider.h
 
 FORMS    += mainwindow.ui \
-    serialconfig.ui
+    serialconfig.ui \
+    fixtures.ui
 
 LIBS += -L/usr/lib/fglrx
