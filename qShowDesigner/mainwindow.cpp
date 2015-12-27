@@ -1,7 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "serialconfig.h"
-#include "fixtures.h"
 #include "qlineeditlabel.h"
 
 #include <QtDebug>
@@ -13,6 +12,7 @@
 #define SETTING_BTNLBL "buttonLabel/"
 #define SETTING_WINDOW "window/"
 
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -20,6 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
     mSettings("iconux.org","qShowDesigner")
 {
     ui->setupUi(this);
+    mFixtureDialog = new Fixtures(&mSd, this);
 
     //QString configpath = QStandardPaths::standardLocations(QStandardPaths::ConfigLocation).first();
     //mSettings = new QSettings(configpath + "/qShowDesigner.ini", QSettings::IniFormat);
@@ -55,11 +56,14 @@ MainWindow::MainWindow(QWidget *parent) :
     // load always on top setting
     ui->actionAlways_on_top->setChecked(mSettings.value(SETTING_WINDOW "alwaysontop", false).toBool());
     connect( &mSd, SIGNAL(pageChanged(quint16)), this, SLOT(on_page_changed(quint16)));
+
+    mSd.test();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete mFixtureDialog;
 }
 
 void MainWindow::contextMenuEvent(QContextMenuEvent *event)
@@ -92,6 +96,41 @@ void MainWindow::on_actionExit_triggered()
     close();
 }
 
+void MainWindow::on_actionAlways_on_top_triggered()
+{
+    Qt::WindowFlags flags = windowFlags();
+    if (ui->actionAlways_on_top->isChecked())
+    {
+        flags |= Qt::WindowStaysOnTopHint;
+        // for Linux/X11, need to also set flag to bypass window manager
+        // flags |= Qt::X11BypassWindowManagerHint;
+    }
+    else
+    {
+        flags &= ~Qt::WindowStaysOnTopHint;
+        // flags &= ~Qt::X11BypassWindowManagerHint;
+    }
+    setWindowFlags( flags );
+    mSettings.setValue(SETTING_WINDOW "alwaysontop", ui->actionAlways_on_top->isChecked());
+    show();
+}
+
+
+void MainWindow::on_actionFixtures_triggered()
+{
+    mFixtureDialog->show();
+}
+
+void MainWindow::on_btnDown_clicked()
+{
+    mSd.RequestPageDown();
+}
+
+void MainWindow::on_btnUp_clicked()
+{
+    mSd.RequestPageUp();
+}
+
 void MainWindow::on_btn_num_released()
 {
     QPushButton *clickedButton = qobject_cast<QPushButton*>(sender());
@@ -113,25 +152,6 @@ void MainWindow::on_btn_num_released()
         btn->setStyleSheet("");
     }
     clickedButton->setStyleSheet("background-color:red");
-}
-
-void MainWindow::on_actionAlways_on_top_triggered()
-{
-    Qt::WindowFlags flags = windowFlags();
-    if (ui->actionAlways_on_top->isChecked())
-    {
-        flags |= Qt::WindowStaysOnTopHint;
-        // for Linux/X11, need to also set flag to bypass window manager
-        // flags |= Qt::X11BypassWindowManagerHint;
-    }
-    else
-    {
-        flags &= ~Qt::WindowStaysOnTopHint;
-        // flags &= ~Qt::X11BypassWindowManagerHint;
-    }
-    setWindowFlags( flags );
-    mSettings.setValue(SETTING_WINDOW "alwaysontop", ui->actionAlways_on_top->isChecked());
-    show();
 }
 
 void MainWindow::on_editing_finished()
@@ -168,18 +188,4 @@ void MainWindow::Save()
     qDebug() << mSettings.status();
 }
 
-void MainWindow::on_btnDown_clicked()
-{
-    mSd.RequestPageDown();
-}
 
-void MainWindow::on_btnUp_clicked()
-{
-    mSd.RequestPageUp();
-}
-
-void MainWindow::on_actionFixtures_triggered()
-{
-    Fixtures fix( &mSd, this );
-    fix.exec();
-}

@@ -28,7 +28,8 @@ HEADERS  += mainwindow.h \
     qlineeditlabel.h \
     fixture.h \
     fixtures.h \
-    qchannelslider.h
+    qchannelslider.h \
+    showdesignertest.h
 
 FORMS    += mainwindow.ui \
     serialconfig.ui \

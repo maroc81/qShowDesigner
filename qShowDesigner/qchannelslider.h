@@ -13,18 +13,26 @@ class QChannelSlider : public QVBoxLayout
     Q_OBJECT
 
 public:
-    QChannelSlider(QString name = "", QWidget *parent = 0);
+    QChannelSlider(int number, QString name = "", QWidget *parent = 0);
 
 
     void SetChannelValue( int value );
+    void SetName(QString name);
+    QString GetName();
+    void SetChannelNum( int number );
+    int GetChannelNum();
+
+    void Hide();
+    void Show();
 
 signals:
     // emitted when channel changed
-    void valueChanged(int value);
+    void valueChanged(int value, int num);
 
 public slots:
 
     void onSliderMoved(int position);
+    void onSliderChanged(int value);
     void onSpinBoxChanged(int value);
 
 
@@ -34,6 +42,7 @@ private:
     QLabel *mLabel;
     QSpinBox *mSpinBox;
 
+    int mChannel;
     int mValue;
 };
 

@@ -1,4 +1,5 @@
 #include "showdesigner.h"
+#include "showdesignertest.h"
 
 
 #include <QtDebug>
@@ -7,7 +8,7 @@
 #define START_BYTE          ((char)0xa5)
 
 #define CMD_ID_START        0x01
-#define CMD_ID_PAGENO       0x02
+#define CMD_ID_ACTIVEFUNC   0x02
 #define CMD_ID_SCENES       0x03
 #define CMD_ID_FIXTURES     0x04
 #define CMD_ID_SETCHAN      0x08
@@ -15,6 +16,7 @@
 #define CMD_ID_PAGEUPDN     0x0d
 #define CMD_ID_FUNCTION     0x0e
 #define CMD_ID_BTN          0x0f
+
 
 ShowDesigner::ShowDesigner(QObject *parent) :
     QThread(parent),
@@ -172,6 +174,14 @@ void ShowDesigner::run()
     }
 }
 
+void ShowDesigner::test()
+{
+    qDebug() << "Testing decoding of fixture data";
+    QByteArray testdata(sdTestFixtureResp, sizeof(sdTestFixtureResp));
+    qDebug() << testdata.length();
+    Decode(testdata);
+}
+
 void ShowDesigner::Decode(QByteArray &data)
 {
     enum decode_states {
@@ -252,11 +262,11 @@ bool ShowDesigner::ProcessResp(Response &resp)
 
     switch (resp.cmd)
     {
-    case CMD_ID_PAGENO:
+    case CMD_ID_ACTIVEFUNC:
         if (resp.payload.length() == 2)
         {
-            mPageNo = ((quint16)resp.payload[0]) << 8;
-            mPageNo |= ((quint16)resp.payload[1]);
+            mActiveFunc = (enum ActiveFunction) (resp.payload.at(0));
+            mPageNo = resp.payload[1];
             mPageNo++;
             // emit signal whether page number actually changed
             emit pageChanged(mPageNo);
@@ -272,11 +282,51 @@ bool ShowDesigner::ProcessResp(Response &resp)
         Fixture fix;
         if ( ToFixture( resp, fix ))
         {
-            // add fixture to list of fixtures
+            if (mFixtures.contains(fix.GetId()))
+            {
+                // replace fixture
+                mFixtures.insert(fix.GetId(), fix);
+                emit fixtureChanged( fix );
+            }
+            else
+            {
+                // add fixture to list of fixtures
+                mFixtures.insert(fix.GetId(), fix);
+                emit fixturesChanged();
+            }
         }
 
         break;
     }
+    case CMD_ID_SETCHAN:
+    {
+        if ( resp.length == 3 )
+        {
+            quint8 fixNum = resp.payload[0] + 1;
+            quint8 chanNum = resp.payload[1] + 1;
+            quint8 chanVal = resp.payload[2];
+
+            Fixture f = GetFixtureByNum( fixNum );
+            if ( f.GetId() != 0 )
+            {
+                qDebug() << "Got set channel response, fixture: " << fixNum
+                         << " channel: " << chanNum << " value: " << chanVal;
+                f.SetChannelValue(chanNum, chanVal);
+                mFixtures[fixNum] = f;
+                emit channelChanged(f, f.GetChannel(chanNum) );
+            }
+            else
+            {
+                qDebug() << "Got set channel for unknown fixture: "<< fixNum
+                         << " channel: " << chanNum << " value: " << chanVal;
+            }
+        }
+        else
+        {
+            qDebug() << "Invalid length " << resp.payload.length() << " for response id: " << resp.cmd;
+        }
+    }
+
     case CMD_ID_SCENES:
 
         break;
@@ -291,6 +341,8 @@ bool ShowDesigner::ProcessResp(Response &resp)
         {
             qDebug() << "Invalid length " << resp.payload.length() << " for response id: " << resp.cmd;
         }
+    default:
+        qDebug() << "Received response for unhandled command: " << resp.cmd << " " << resp.length;
     }
     return false;
 }
@@ -365,6 +417,13 @@ bool ShowDesigner::RequestFixtures()
     return SendCmd(cmd, sizeof(cmd));
 }
 
+bool ShowDesigner::SetFixtureChannel(quint8 fixNum, quint8 channel, quint8 value)
+{
+    const char cmd[] = {START_BYTE, CMD_ID_SETCHAN, (char)(fixNum - 1), (char)channel, (char)value};
+    qDebug() << cmd;
+    return SendCmd(cmd, sizeof(cmd));
+}
+
 bool ShowDesigner::RequestScenes(quint16 pageNo)
 {
     // send scenes command
@@ -384,7 +443,7 @@ bool ShowDesigner::RequestScenes(quint16 pageNo)
 bool ShowDesigner::RequestPageNo()
 {
     // send get page no command
-    const char cmd[] = {START_BYTE, CMD_ID_PAGENO};
+    const char cmd[] = {START_BYTE, CMD_ID_ACTIVEFUNC};
     return SendCmd(cmd, sizeof(cmd));
 }
 
@@ -396,36 +455,86 @@ bool ShowDesigner::SelectFunction(Functions func)
 
 bool ShowDesigner::ToFixture(Response &resp, Fixture &fix)
 {
-    // fixture response with at least 1 channel is 70 bytes long
-    // fixture ids/buttons that aren't assigned will be less than 70 bytes
-    if (resp.length < 70)
+    // fixture with more than 1 channel is at least 70 bytes long
+    // fitxure with only 1 channel is 62 bytes long
+    // fixture ids/buttons that aren't assigned are 2 bytes long
+    if (resp.length == 2 )
     {
-        qDebug() << Q_FUNC_INFO << " Invalid length of fixture response: " << resp.length;
+        qDebug() << "Got unassigned fixture with id " << (int)(resp.payload[0] + 1);
+        return false;
+    }
+    else if ( resp.length == 62 )
+    {
+        qDebug() << "Got fixture with 1 channel " << (int)resp.payload[0];
+    }
+    else if (resp.length < 70)
+    {
+        qDebug() << "Invalid length of fixture response: " << resp.length;
         return false;
     }
 
-    fix.SetId(resp.payload[0]);
+    fix.SetId(resp.payload[0] + 1);
     fix.SetType(resp.payload[1]);
-
-    quint16 numChannels = resp.payload.mid(2,2).toUShort();
+    quint16 numChannels = (resp.payload[2] << 8) | resp.payload[3];
     QString name = QString::fromStdString( resp.payload.mid(13,16).toStdString() );
     fix.SetName( name );
 
-    qDebug() << Q_FUNC_INFO << " Read fixture with name: " << fix.GetName() << " id: " << fix.GetId() << " type: " << fix.GetType();
+    qDebug() << "Read fixture with name: " << fix.GetName() << " id: " << fix.GetId()
+             << " type: " << fix.GetType() << " channels: " << numChannels;
 
     // channels are 8 bytes each and start at byte 62
-    if ( (numChannels * 8 ) + 62  < resp.length)
+    // except for single channel fixtures
+    if ( ((numChannels * 8 ) + 62)  > resp.length && numChannels != 1)
     {
         qDebug() << Q_FUNC_INFO << "Invalid length: " << resp.length << " for number of channels: " << numChannels;
         return false;
     }
 
-   /* QMap<quint8, Fixture::Channel> channels;
-    for ( int i = 0; i << numChannels; i++ )
+    QMap<quint8, Fixture::Channel> channels;
+
+    if ( numChannels == 1 )
     {
-        channels[]
-    }*/
+        Fixture::Channel channel;
+        channel.mNum = 1;
+        channel.mValue = 0;
+        channel.mName = "Dimmer";
+        channels[1] = channel;
+        fix.SetChannels(channels);
+        return true;
+    }
+
+    for ( int i = 0; i < numChannels; i++ )
+    {
+        Fixture::Channel channel;
+        channel.mNum = i + 1;
+        channel.mValue = 0;
+        channel.mName = QString::fromStdString( resp.payload.mid(62+(8*i),8).toStdString());
+        channels[i+1] = channel;
+        qDebug() << "Fixture " << fix.GetName() << " Channel " << channel.mNum << " " << channel.mName;
+    }
+    fix.SetChannels(channels);
 
     return true;
+}
+
+void ShowDesigner::SetFixtures(QMap<quint8,Fixture> fixtures)
+{
+    mFixtures = fixtures;
+    //emit dataChanged(index, index);
+    emit fixturesChanged();
+}
+
+QMap<quint8,Fixture> ShowDesigner::GetFixtures()
+{
+    return mFixtures;
+}
+
+Fixture ShowDesigner::GetFixtureByNum(quint8 fixNum)
+{
+    if (mFixtures.contains(fixNum))
+    {
+        return mFixtures[fixNum];
+    }
+    return Fixture();
 }
 

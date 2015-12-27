@@ -19,23 +19,24 @@ public:
     };
 
     Fixture();
-    //Fixture(struct Response resp);
+    Fixture(quint8 id, QString name, quint8 type);
     virtual ~Fixture();
 
     void SetName(const QString &name);
-    QString GetName();
+    QString GetName() const;
 
-    void SetChannelValue(int num, qint8 val);
-    qint8 GetChannelValue(int num);
+    void SetChannelValue(int num, quint8 val);
+    qint8 GetChannelValue(int num) const;
+    Channel GetChannel(int num) const;
 
     void SetId(quint8 id);
-    quint8 GetId();
+    quint8 GetId() const;
 
     void SetType(quint8 type);
-    quint8 GetType();
+    quint8 GetType() const;
 
     void SetChannels(QMap<quint8, Channel> channels );
-    QMap<quint8, Channel> GetChannels();
+    QMap<quint8, Channel> GetChannels() const;
 
 
 private:

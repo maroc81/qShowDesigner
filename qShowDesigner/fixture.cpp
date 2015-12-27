@@ -1,6 +1,17 @@
 #include "fixture.h"
 
-Fixture::Fixture()
+Fixture::Fixture() :
+    mId(0),
+    mName(""),
+    mType(0)
+{
+
+}
+
+Fixture::Fixture(quint8 id, QString name, quint8 type) :
+    mId(id),
+    mName(name),
+    mType(type)
 {
 
 }
@@ -15,20 +26,24 @@ void Fixture::SetName(const QString &name)
     mName = name;
 }
 
-QString Fixture::GetName()
+QString Fixture::GetName() const
 {
     return mName;
 }
 
-void Fixture::SetChannelValue(int num, qint8 val)
+void Fixture::SetChannelValue(int num, quint8 val)
 {
-    Channel chan = mChannels[num];
-    chan.mValue = val;
+    mChannels[num].mValue = val;
 }
 
-qint8 Fixture::GetChannelValue(int num)
+qint8 Fixture::GetChannelValue(int num) const
 {
     return mChannels[num].mValue;
+}
+
+Fixture::Channel Fixture::GetChannel(int num) const
+{
+    return mChannels[num];
 }
 
 void Fixture::SetId(quint8 id)
@@ -36,7 +51,7 @@ void Fixture::SetId(quint8 id)
     mId = id;
 }
 
-quint8 Fixture::GetId()
+quint8 Fixture::GetId() const
 {
     return mId;
 }
@@ -45,9 +60,20 @@ void Fixture::SetType(quint8 type)
 {
     mType = type;
 }
-quint8 Fixture::GetType()
+
+quint8 Fixture::GetType() const
 {
     return mType;
+}
+
+void Fixture::SetChannels(QMap<quint8, Channel> channels )
+{
+    mChannels = channels;
+}
+
+QMap<quint8, Fixture::Channel> Fixture::GetChannels() const
+{
+    return mChannels;
 }
 
 Fixture::Channel::Channel()

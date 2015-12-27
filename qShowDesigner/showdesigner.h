@@ -24,6 +24,18 @@ public:
         eFixtureGroup = 5
     };
 
+    enum ActiveFunction
+    {
+        eActiveFuncInvalid = -1,
+        eActiveFuncScene = 0x00,
+        eActiveFuncShow = 0x01,
+        eActiveFuncPreset = 0x02,
+        eActiveFuncChase = 0x04,
+        eActiveFuncFixture = 0x06,
+        eActiveFuncFixtureGroup = 0x07,
+        eActiveFuncNone = 0xff
+    };
+
     struct Response
     {
         quint8 start;
@@ -46,21 +58,32 @@ public:
     bool RequestPageUp();
     bool RequestPageDown();
     bool RequestFixtures();
+    bool SetFixtureChannel(quint8 fixNum, quint8 channel, quint8 value);
     bool RequestScenes(quint16 pageNo = 0);
     bool RequestPageNo();
     bool SelectFunction( enum Functions func);
 
-    Fixture ToFixture(struct Response &resp);
+    bool ToFixture(Response &resp, Fixture &fix);
+    void SetFixtures(QMap<quint8,Fixture> fixtures);
+    QMap<quint8,Fixture> GetFixtures();
+    Fixture GetFixtureByNum(quint8 fixNum);
+
+
+
+    void Decode(QByteArray &data);
+    void test();
 
 signals:
     void pageChanged(quint16 pageNo);
+    void fixturesChanged();
+    void fixtureChanged(Fixture fixture);
+    void channelChanged(Fixture fixture, Fixture::Channel channel);
 
 protected:
     void run() Q_DECL_OVERRIDE;
 
 private:
 
-    void Decode(QByteArray &data);
     bool ProcessResp(struct Response &resp);
     bool ParseFixture(struct Response &resp);
 
@@ -69,12 +92,13 @@ private:
     bool mIsConnected;
     QString mErrorString;
     QByteArray mReadData;
-    QList<Fixture> mFixtures;
+    QMap<quint8,Fixture> mFixtures;
 
     struct Response mResp;
 
     // selected page number on the controller
-    qint16 mPageNo;
+    qint8 mPageNo;
+    enum ActiveFunction mActiveFunc;
     // last button "pushed"
     int mPushedButton;
     // selected scene
