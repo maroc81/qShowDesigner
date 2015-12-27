@@ -5,6 +5,7 @@
 #include <QString>
 
 #include <QAbstractTableModel>
+#include <QSettings>
 
 #include "showdesigner.h"
 
@@ -61,6 +62,9 @@ public slots:
     void on_FixtureChanged( Fixture fixture );
     void on_ChannelChanged( Fixture fixture, Fixture::Channel channel);
 
+protected:
+    void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
+    void moveEvent(QMoveEvent *event) Q_DECL_OVERRIDE;
 
 private slots:
     void on_btnRefresh_released();
@@ -73,6 +77,7 @@ private:
     Ui::Fixtures *ui;
     ShowDesigner *mSd;
     FixtureModel *mModel;
+    QSettings mSettings;
 };
 
 

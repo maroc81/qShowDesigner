@@ -8,6 +8,11 @@
 #include <QLayoutItem>
 #include <QStandardItemModel>
 
+#define FIXTURES_HEIGHT     "Fixtures/height"
+#define FIXTURES_WIDTH      "Fixtures/width"
+#define FIXTURES_X          "Fixtures/x"
+#define FIXTURES_Y          "Fixtures/y"
+
 void clearLayout(QLayout *layout)
 {
     QLayoutItem *item;
@@ -224,7 +229,8 @@ void FixtureModel::UpdateFixture(Fixture &fixture)
 
 void FixtureModel::UpdateChannel(Fixture &fixture, Fixture::Channel &channel)
 {
-
+    // for now just update the whole fixture
+    UpdateFixture( fixture );
 }
 
 QMap<quint8,Fixture> FixtureModel::GetFixtures()
@@ -248,9 +254,10 @@ QMap<quint8,Fixture> FixtureModel::GetSelectedFixtures()
 
 Fixtures::Fixtures( ShowDesigner *sd, QWidget *parent ) :
     QDialog(parent),
-    ui(new Ui::Fixtures)
+    ui(new Ui::Fixtures),
+    mSd(sd),
+    mSettings("iconux.org","qShowDesigner")
 {
-    mSd = sd;
     ui->setupUi(this);
 
     clearLayout(ui->hlChannelSliders);
@@ -287,7 +294,33 @@ Fixtures::Fixtures( ShowDesigner *sd, QWidget *parent ) :
        connect( chsl, SIGNAL(valueChanged(int,int)), this, SLOT(on_ChannelValueChanged(int,int)));
     }
 
+    int h = mSettings.value(FIXTURES_HEIGHT, 800).toInt();
+    int w = mSettings.value(FIXTURES_WIDTH, 1200).toInt();
+    resize(w, h);
+
+    int x = mSettings.value(FIXTURES_X, 0).toInt();
+    int y = mSettings.value(FIXTURES_Y, 0).toInt();
+    move(x, y);
+
     //mSd->test();
+}
+
+void Fixtures::resizeEvent(QResizeEvent *event)
+{
+    int h = height();
+    int w = width();
+    mSettings.setValue(FIXTURES_HEIGHT, h);
+    mSettings.setValue(FIXTURES_WIDTH, w);
+    QWidget::resizeEvent(event);
+}
+
+void Fixtures::moveEvent(QMoveEvent *event)
+{
+    int xpos = x();
+    int ypos = y();
+    mSettings.setValue(FIXTURES_X, xpos);
+    mSettings.setValue(FIXTURES_Y, ypos);
+    QWidget::moveEvent(event);
 }
 
 Fixtures::~Fixtures()
@@ -349,7 +382,7 @@ void Fixtures::on_FixtureChanged(Fixture fixture)
 
 void Fixtures::on_ChannelChanged(Fixture fixture, Fixture::Channel channel)
 {
-    mModel->UpdateFixture( fixture );
+    mModel->UpdateChannel( fixture, channel );
 }
 
 void Fixtures::on_btnRefresh_released()
