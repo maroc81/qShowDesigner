@@ -16,7 +16,7 @@ Command  | ID | Description
 --------- | ---- | -------------
 Start Byte | a5 | All commands and responses start with a5.  I don't know how or if a5 is escaped if it appears in the data
 Hello? | 01 | Appears to be a "hello" or "ping" command. The command and response consist entirely of "a5 01"
-Page No | 02 | Requests the currently selected page number.  The response is the page number minus 1.
+Active Function and Page | 02 | Requests the currently selected function and page number.  The response is the selected function and page number minus 1.
 Scenes | 03 | Requests all programmed scenes and their names for the given page number.
 Fixtures | 04 | Requests all fixtures and their details.
 Set Fixture Channel | 08 | Sets fixture channel value
@@ -63,27 +63,40 @@ a5 | Start byte
 01 | Command byte
 
 
-## Request Page Number
+## Request Active Function and Page Number
 ### Description
-Request the currently selected page number on the controller.  Page numbers on the controller start at 1 but start at 0 in the protocol.
+Request the currently active function and selected page number on the controller.  Page numbers on the controller start at 1 but start at 0 in the protocol.
 
 ### Command
 
 Byte | Description
 ----- | ------
 a5 | Start byte
-02 | Request Page Number command ID byte
+02 | Request Active Function and Page Number command ID byte
 
 ### Response
 
 Byte | Description
 ----- | ------
 a5 | Start byte
-02 | Page Number response ID byte
+02 | Active function and Page Number response ID byte
 02 | Response length low byte
 00 | Response length high byte
-xx | Current page number minus 1 high byte
-xx | Current page number minus 1 low byte
+xx | Current active function
+xx | Current page number minus 1 for functions that use page numbers. If function does not use page numbers, value is 0.=
+
+### Command
+Function | Description
+---------| -----------
+00 | Scene
+01 | Show
+02 | Preset
+03 | Unknown/unassigned
+04 | Chase, does not use page numbers
+05 | Unknown/unassigned
+06 | Fixture, does not use page numbers
+07 | Fixture group, does not use page numbers
+ff | No function selected
 
 ## Page Up/Down
 
@@ -200,8 +213,8 @@ Selects the function/mode of the controller.  When in different modes, the numbe
 Function | Description
 ---------| -----------
 00 | Scene
-01 | TBD (Shows?)
-02 | TBD (Chase?)
+01 | Show
+02 | Preset
 03 | TBD (Preset?)
 04 | Fixture
 05 | Fixture Group?
