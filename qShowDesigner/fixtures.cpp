@@ -7,6 +7,7 @@
 #include <QLayout>
 #include <QLayoutItem>
 #include <QStandardItemModel>
+#include <QKeyEvent>
 
 #define FIXTURES_HEIGHT     "Fixtures/height"
 #define FIXTURES_WIDTH      "Fixtures/width"
@@ -272,10 +273,10 @@ Fixtures::Fixtures( ShowDesigner *sd, QWidget *parent ) :
     // create fixture model and initialize it to current fixtures
     mModel = new FixtureModel();
     mModel->SetFixtures(mSd->GetFixtures());
-    connect(mModel, SIGNAL(fixtureSelected()), this, SLOT(on_FixtureSelected()));
-    connect(mSd, SIGNAL(fixturesChanged()), this, SLOT(on_FixturesChanged()));
-    connect(mSd, SIGNAL(fixtureChanged(Fixture)), this, SLOT(on_FixtureChanged(Fixture)));
-    connect(mSd, SIGNAL(channelChanged(Fixture, Fixture::Channel)), this, SLOT(on_ChannelChanged(Fixture, Fixture::Channel)));
+    connect(mModel, SIGNAL(fixtureSelected()), this, SLOT(on_FixtureSelected()), Qt::QueuedConnection);
+    connect(mSd, SIGNAL(fixturesChanged()), this, SLOT(on_FixturesChanged()), Qt::QueuedConnection);
+    connect(mSd, SIGNAL(fixtureChanged(quint8)), this, SLOT(on_FixtureChanged(quint8)), Qt::QueuedConnection);
+    connect(mSd, SIGNAL(channelChanged(quint8, quint8)), this, SLOT(on_ChannelChanged(quint8, quint8)),Qt::QueuedConnection);
     ui->tblFixtures->setModel(mModel);
 
     ui->tblFixtures->setColumnWidth(0,30);
@@ -301,8 +302,6 @@ Fixtures::Fixtures( ShowDesigner *sd, QWidget *parent ) :
     int x = mSettings.value(FIXTURES_X, 0).toInt();
     int y = mSettings.value(FIXTURES_Y, 0).toInt();
     move(x, y);
-
-    //mSd->test();
 }
 
 void Fixtures::resizeEvent(QResizeEvent *event)
@@ -321,6 +320,23 @@ void Fixtures::moveEvent(QMoveEvent *event)
     mSettings.setValue(FIXTURES_X, xpos);
     mSettings.setValue(FIXTURES_Y, ypos);
     QWidget::moveEvent(event);
+}
+
+void Fixtures::keyPressEvent(QKeyEvent *event)
+{
+    if ( Qt::Key_F9 == event->key())
+    {
+        mSd->test();
+    }
+    else if ( Qt::Key_F10 == event->key())
+    {
+        static quint8 chan = 123;
+        const char test[] = {char(0xa5), 0x08, 0x03,0x00,0x00,0x00, chan};
+        chan += 5;
+        QByteArray testarray(test, sizeof(test));
+        mSd->Decode(testarray);
+
+    }
 }
 
 Fixtures::~Fixtures()
@@ -375,21 +391,24 @@ void Fixtures::on_FixturesChanged()
     mModel->SetFixtures(mSd->GetFixtures());
 }
 
-void Fixtures::on_FixtureChanged(Fixture fixture)
+void Fixtures::on_FixtureChanged(quint8 fixId)
 {
-    mModel->UpdateFixture( fixture );
+    Fixture fix = mSd->GetFixtureByNum(fixId);
+    mModel->UpdateFixture( fix );
 }
 
-void Fixtures::on_ChannelChanged(Fixture fixture, Fixture::Channel channel)
+void Fixtures::on_ChannelChanged(quint8 fixId, quint8 channelNum)
 {
-    mModel->UpdateChannel( fixture, channel );
+    Fixture fix = mSd->GetFixtureByNum(fixId);
+    Fixture::Channel chan = fix.GetChannel( channelNum );
+    mModel->UpdateChannel( fix, chan );
 }
 
 void Fixtures::on_btnRefresh_released()
 {
-    const char testdata[] = {char(0xa5),0x08,0x03,0x00,0x2c,0x01,0x7f};
-    QByteArray ba(testdata, sizeof(testdata));
-    mSd->Decode( ba );
+    //const char testdata[] = {char(0xa5),0x08,0x03,0x00,0x2c,0x01,0x7f};
+    //QByteArray ba(testdata, sizeof(testdata));
+    //mSd->Decode( ba );
 }
 
 void Fixtures::on_btnRefresh_clicked()
