@@ -286,7 +286,7 @@ bool ShowDesigner::ProcessResp(Response &resp)
             {
                 // replace fixture
                 mFixtures.insert(fix.GetId(), fix);
-                emit fixtureChanged( fix );
+                emit fixtureChanged( fix.GetId() );
             }
             else
             {
@@ -313,7 +313,7 @@ bool ShowDesigner::ProcessResp(Response &resp)
                          << " channel: " << chanNum << " value: " << chanVal;
                 f.SetChannelValue(chanNum, chanVal);
                 mFixtures[fixNum] = f;
-                emit channelChanged(f, f.GetChannel(chanNum) );
+                emit channelChanged(f.GetId(), chanNum);
             }
             else
             {

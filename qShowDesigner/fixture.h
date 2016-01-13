@@ -41,8 +41,8 @@ public:
 
 private:
     QMap<quint8, Channel> mChannels;
-    QString mName;
     quint8 mId;
+    QString mName;
     quint8 mType;
 };
 

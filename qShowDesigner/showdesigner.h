@@ -76,8 +76,8 @@ public:
 signals:
     void pageChanged(quint16 pageNo);
     void fixturesChanged();
-    void fixtureChanged(Fixture fixture);
-    void channelChanged(Fixture fixture, Fixture::Channel channel);
+    void fixtureChanged(quint8 fixId);
+    void channelChanged(quint8 fixId, quint8 channelNum);
 
 protected:
     void run() Q_DECL_OVERRIDE;

@@ -59,12 +59,13 @@ public slots:
     void on_ChannelValueChanged(int value, int num);
     void on_FixtureSelected();
     void on_FixturesChanged();
-    void on_FixtureChanged( Fixture fixture );
-    void on_ChannelChanged( Fixture fixture, Fixture::Channel channel);
+    void on_FixtureChanged( quint8 fixId );
+    void on_ChannelChanged( quint8 fixId, quint8 channelNum);
 
 protected:
     void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
     void moveEvent(QMoveEvent *event) Q_DECL_OVERRIDE;
+    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
 private slots:
     void on_btnRefresh_released();

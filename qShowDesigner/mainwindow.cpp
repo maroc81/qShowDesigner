@@ -56,8 +56,6 @@ MainWindow::MainWindow(QWidget *parent) :
     // load always on top setting
     ui->actionAlways_on_top->setChecked(mSettings.value(SETTING_WINDOW "alwaysontop", false).toBool());
     connect( &mSd, SIGNAL(pageChanged(quint16)), this, SLOT(on_page_changed(quint16)));
-
-    mSd.test();
 }
 
 MainWindow::~MainWindow()
