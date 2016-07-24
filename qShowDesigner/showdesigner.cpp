@@ -4,6 +4,7 @@
 
 #include <QtDebug>
 #include <QThread>
+#include <QMutexLocker>
 
 #define START_BYTE          ((char)0xa5)
 
@@ -12,7 +13,7 @@
 #define CMD_ID_SCENES       0x03
 #define CMD_ID_FIXTURES     0x04
 #define CMD_ID_SETCHAN      0x08
-#define CMD_ID_IDK          0x0b     // don't yet know what this id does but have seen the SD software use it
+#define CMD_ID_SELNUM       0x0c
 #define CMD_ID_PAGEUPDN     0x0d
 #define CMD_ID_FUNCTION     0x0e
 #define CMD_ID_BTN          0x0f
@@ -140,6 +141,7 @@ bool ShowDesigner::ConnectToShowDesigner(const QString &port)
         mErrorString = "Connection to show designer succeeded";
         qDebug() << Q_FUNC_INFO << mErrorString;
         mIsConnected = true;
+        mPort.clearError();
         // start the read thread now that the port is open and connected
         start();
         // request the current page number
@@ -163,13 +165,30 @@ bool ShowDesigner::ConnectToShowDesigner(const QString &port)
  */
 void ShowDesigner::run()
 {
+    qint64 num = 0;
     mRun = true;
     while (mRun)
     {
-        if (mPort.waitForReadyRead(100))
+        mMutex.lock();
+        num = mPort.bytesAvailable();
+        if (num > 0)
         {
             QByteArray readData = mPort.readAll();
             Decode(readData);
+            mMutex.unlock();
+        }
+        else
+        {  
+            mMutex.unlock();
+            // work around problem with QSerialPort
+            // if serial port goes away while open (e.g. USB serial adapter unplugged)
+            // waitForReadyRead will return immediately due to error
+            // mPort.error() returns "Unknown Error" but it returns the same error
+            // if no bytes are ready for read so there is no way to know which error occured
+            // for now we sleep for 10 ms to keep thread from using 100% CPU
+            // TODO: figure out how to detect unplug and close port/signal connection is lost
+            // for now we sleep so that the thread doesn't use all CPU
+            this->msleep(10UL);
         }
     }
 }
@@ -284,6 +303,15 @@ bool ShowDesigner::ProcessResp(Response &resp)
         {
             if (mFixtures.contains(fix.GetId()))
             {
+                // copy channel values from existing channels so value doesn't "flicker"
+                // on display since it takes a second or so for channel values to
+                // come over serial port after fixture data
+                char key;
+                foreach(key, mFixtures[fix.GetId()].GetChannels().keys())
+                {
+                    fix.SetChannelValue(key,mFixtures[fix.GetId()].GetChannelValue(key));
+                }
+
                 // replace fixture
                 mFixtures.insert(fix.GetId(), fix);
                 emit fixtureChanged( fix.GetId() );
@@ -325,10 +353,26 @@ bool ShowDesigner::ProcessResp(Response &resp)
         {
             qDebug() << "Invalid length " << resp.payload.length() << " for response id: " << resp.cmd;
         }
+        break;
     }
 
     case CMD_ID_SCENES:
 
+        break;
+
+    case CMD_ID_SELNUM:
+        if (resp.payload.length() == 2)
+        {
+            quint8 btnNum = resp.payload[0];
+            quint8 bitSel = resp.payload[1];
+
+            mSelectedButtons[btnNum+1] = (bitSel & (0x01 << (btnNum % 8))) != 0;
+            qDebug() << "Button " << btnNum + 1 << (mSelectedButtons[btnNum+1] ? " selected " : " deselected");
+        }
+        else
+        {
+            qDebug() << "Invalid length " << resp.payload.length() << " for response id: " << resp.cmd;
+        }
         break;
 
     case CMD_ID_FUNCTION:
@@ -341,6 +385,8 @@ bool ShowDesigner::ProcessResp(Response &resp)
         {
             qDebug() << "Invalid length " << resp.payload.length() << " for response id: " << resp.cmd;
         }
+        break;
+
     default:
         qDebug() << "Received response for unhandled command: " << resp.cmd << " " << resp.length;
     }
@@ -350,16 +396,19 @@ bool ShowDesigner::ProcessResp(Response &resp)
 
 QString ShowDesigner::GetErrorString() const
 {
+    QMutexLocker locker(&mMutex);
     return mErrorString;
 }
 
 quint16 ShowDesigner::GetPageNo()
 {
+    QMutexLocker locker(&mMutex);
     return mPageNo;
 }
 
 bool ShowDesigner::SendCmd(const char *data, qint64 count)
 {
+    QMutexLocker locker(&mMutex);
     qint64 retval;
 
     if (!mPort.isOpen())
@@ -519,6 +568,7 @@ bool ShowDesigner::ToFixture(Response &resp, Fixture &fix)
 
 void ShowDesigner::SetFixtures(QMap<quint8,Fixture> fixtures)
 {
+    QMutexLocker locker(&mMutex);
     mFixtures = fixtures;
     //emit dataChanged(index, index);
     emit fixturesChanged();
@@ -526,11 +576,13 @@ void ShowDesigner::SetFixtures(QMap<quint8,Fixture> fixtures)
 
 QMap<quint8,Fixture> ShowDesigner::GetFixtures()
 {
+    QMutexLocker locker(&mMutex);
     return mFixtures;
 }
 
 Fixture ShowDesigner::GetFixtureByNum(quint8 fixNum)
 {
+    QMutexLocker locker(&mMutex);
     if (mFixtures.contains(fixNum))
     {
         return mFixtures[fixNum];

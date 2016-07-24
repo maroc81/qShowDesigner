@@ -331,7 +331,7 @@ void Fixtures::keyPressEvent(QKeyEvent *event)
     else if ( Qt::Key_F10 == event->key())
     {
         static quint8 chan = 123;
-        const char test[] = {char(0xa5), 0x08, 0x03,0x00,0x00,0x00, chan};
+        char test[] = {char(0xa5), 0x08, 0x03,0x00,0x00,0x00, char(chan)};
         chan += 5;
         QByteArray testarray(test, sizeof(test));
         mSd->Decode(testarray);

@@ -22,7 +22,7 @@ Fixtures | 04 | Requests all fixtures and their details.
 Set Fixture Channel | 08 | Sets fixture channel value
 Unknown Response | 09 | Unknown response to commands 0b and 0f.
 Unknown | 0b | This command and 09 response have been observed but the function is currently unknown. This command appears to be related to information for a fixture as it is sent by SD monitor when double click a fixture (or maybe when you go to View->Fixtures).
-Unknown Response | 0c | Unknown response to command 0b.
+Selected Number Button | 0c | Sent when a numbered button is selected/deselected.
 Change Page | 0d | Changes page up or down based on argument.
 Select Function | 0e | Selects one of the functions such as fixture or scene 
 Push Button | 0f | "Pushes" one of the numbered buttons on show designer.
@@ -249,6 +249,44 @@ xx | Button number minus 1
 
 ### Response
 A response is sometimes returned with ID 0x09.
+
+
+## Selected Number Button
+
+### Description
+Response sent by the show designer when a numbered button is selected or deselected.  This is done by the show designer whenever a person physcially pushes a button on the show designer or by the show designer in response to a command that selects the button.
+
+### Response
+Byte | Description
+----- | ------
+a5 | Start byte
+0c | Response ID
+xx | Response length low byte
+xx | Response length high byte
+xx | Selected button number - 1/bit number
+XX | Bitmask with selected button number
+
+### Additional Information
+The Elation Show Designer 2 has 48 numbered buttons. The selected buttons are encoded in a bitmask with 48/8=6 bytes.  However, a each button and bit encoding, 48 total, is sent for each bit with the first number being the bit number or selected button number minus 1.  The show designer for some reason does not just send 6 bytes to represent all 48 numbered buttons.
+
+When a button is deselected, a single response is sent with the selected button number - 1 and the bit mask corresponding to that button which should be "00".
+
+For example, the sequence below shows 2 separate response that indicate button number 1 (bit number 0) and button number 48 (bit number 7 in the byte) has been deselected
+
+```
+a5 0c 02 00 00
+a5 0c 02 2f 00
+```
+
+When a button is selected, 48 responses are sent, one for each button. The sequence below shows that fixture 1 and fixture 48 are selected.  Notice for button 48 (48-1 = 47 = 2f), bit 7 is selected because 47 (2f) mod 8 equals 7.  Even though the show designer includes the fixture number/bit, it still uses bit encoding to indicate which fixture number is selected.
+
+```
+00 01
+01 00
+02 00
+....
+2f 80
+```
 
 ## Unknown command with ID 0b
 ### Description

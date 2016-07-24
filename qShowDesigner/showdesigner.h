@@ -8,6 +8,7 @@
 #include <QString>
 #include <QList>
 #include <QByteArray>
+#include <QMutex>
 
 class ShowDesigner : public QThread
 {
@@ -68,8 +69,6 @@ public:
     QMap<quint8,Fixture> GetFixtures();
     Fixture GetFixtureByNum(quint8 fixNum);
 
-
-
     void Decode(QByteArray &data);
     void test();
 
@@ -85,26 +84,39 @@ protected:
 private:
 
     bool ProcessResp(struct Response &resp);
-    bool ParseFixture(struct Response &resp);
 
+    // flag to indicate thread is running/should exit
     bool mRun;
+    // serial port object to communicate with show designer
     QSerialPort mPort;
+    // true if serial port is open and has been connected to show designer
     bool mIsConnected;
+    // string containing last error message
     QString mErrorString;
+    // array of bytes read from serial port
     QByteArray mReadData;
-    QMap<quint8,Fixture> mFixtures;
-
+    // response struct used in decoding serial port data
     struct Response mResp;
 
+    // mutex for serializing access to serial port object
+    mutable QMutex mMutex;
+
+    // map of fixture objects
+    QMap<quint8,Fixture> mFixtures;
+    // map of selected buttons
+    QMap<quint8, bool> mSelectedButtons;
+    // map of scenes
+    QMap<quint8, QString> mScenes;
     // selected page number on the controller
     qint8 mPageNo;
+    // the actively selected function on the show designer
     enum ActiveFunction mActiveFunc;
+    // current function
+    enum Functions mFunc;
     // last button "pushed"
     int mPushedButton;
     // selected scene
     int mSelectedScene;
-    // current function
-    enum Functions mFunc;
 
 };
 
