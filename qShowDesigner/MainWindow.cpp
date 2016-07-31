@@ -1,5 +1,5 @@
 #include "MainWindow.h"
-#include "ui_mainwindow.h"
+#include "ui_MainWindow.h"
 #include "SerialConfig.h"
 #include "QLineEditLabel.h"
 
@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
     mSettings("iconux.org","qShowDesigner")
 {
     ui->setupUi(this);
-    mFixtureDialog = new Fixtures(&mSd, this);
+    mFixtureDialog = new FixturesWindow(&mSd, this);
 
     //QString configpath = QStandardPaths::standardLocations(QStandardPaths::ConfigLocation).first();
     //mSettings = new QSettings(configpath + "/qShowDesigner.ini", QSettings::IniFormat);

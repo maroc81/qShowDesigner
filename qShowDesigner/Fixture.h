@@ -4,6 +4,16 @@
 #include <QString>
 #include <QMap>
 
+/**
+ * @brief Fixture is a lighting device controlled by the elation show designer.
+ *
+ * A fixture is a ligthing device with one or more channels. Each fixture has a
+ * name, type, and id.  The id is the fixture number assigned to the show designer.
+ *
+ * Each channel assigned to the fixture has a name, number, and value.  The value
+ * of the channel represents things such as brightness, color, speed, intensity, etc.
+ *
+ */
 class Fixture
 {
 public:

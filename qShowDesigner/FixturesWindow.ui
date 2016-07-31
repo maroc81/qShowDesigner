@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Fixtures</class>
- <widget class="QDialog" name="Fixtures">
+ <class>FixturesWindow</class>
+ <widget class="QDialog" name="FixturesWindow">
   <property name="geometry">
    <rect>
     <x>0</x>

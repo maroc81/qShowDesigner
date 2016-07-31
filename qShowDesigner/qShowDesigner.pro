@@ -19,8 +19,9 @@ SOURCES += main.cpp\
     QLineEditLabel.cpp \
     QChannelSlider.cpp \
     Fixture.cpp \
-    Fixtures.cpp \
-    MainWindow.cpp
+    MainWindow.cpp \
+    FixturesModel.cpp \
+    FixturesWindow.cpp
 
 HEADERS  += \
     ShowDesigner.h \
@@ -29,12 +30,14 @@ HEADERS  += \
     QLineEditLabel.h \
     QChannelSlider.h \
     Fixture.h \
-    Fixtures.h \
-    MainWindow.h
+    MainWindow.h \
+    FixturesModel.h \
+    FixturesWindow.h
 
 FORMS    += \
-    Fixtures.ui \
     MainWindow.ui \
-    SerialConfig.ui
+    SerialConfig.ui \
+    FixturesWindow.ui
 
 LIBS += -L/usr/lib/fglrx
+LIBS += -L/usr/lib/nvidia-352/

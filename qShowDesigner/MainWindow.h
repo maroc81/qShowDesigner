@@ -6,7 +6,7 @@
 #include <QSettings>
 
 #include "ShowDesigner.h"
-#include "Fixtures.h"
+#include "FixturesWindow.h"
 
 namespace Ui {
 class MainWindow;
@@ -52,7 +52,7 @@ private:
     ShowDesigner mSd;
     QLabel *mStatusLabel;
     QSettings mSettings;
-    Fixtures* mFixtureDialog;
+    FixturesWindow* mFixtureDialog;
 
 };
 
