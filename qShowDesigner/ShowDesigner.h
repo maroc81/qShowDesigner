@@ -10,6 +10,11 @@
 #include <QByteArray>
 #include <QMutex>
 
+/**
+ * @brief The ShowDesigner class interfaces to the Elation Show Designer 2 lighting controller.
+ *
+ *
+ */
 class ShowDesigner : public QThread
 {
 

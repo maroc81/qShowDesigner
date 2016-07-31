@@ -30,6 +30,7 @@ public:
 
     Fixture();
     Fixture(quint8 id, QString name, quint8 type);
+    Fixture(const Fixture &from);
     virtual ~Fixture();
 
     void SetName(const QString &name);

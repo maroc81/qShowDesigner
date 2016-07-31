@@ -164,7 +164,7 @@ void FixturesWindow::on_FixtureSelected()
 
 void FixturesWindow::on_FixturesChanged()
 {
-    qDebug() << "Fixture changed";
+    qDebug() << "Fixtures changed";
     // update the model and refresh the table
     mModel->SetFixtures(mSd->GetFixtures());
 }

@@ -16,6 +16,18 @@ Fixture::Fixture(quint8 id, QString name, quint8 type) :
 
 }
 
+Fixture::Fixture(const Fixture &from)
+{
+    mId = from.mId;
+    mName = from.mName;
+    mType = from.mType;
+    quint8 key;
+    foreach(key, from.mChannels.keys())
+    {
+        mChannels[key] = from.mChannels[key];
+    }
+}
+
 Fixture::~Fixture()
 {
 

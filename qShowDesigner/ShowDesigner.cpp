@@ -303,17 +303,21 @@ bool ShowDesigner::ProcessResp(Response &resp)
         {
             if (mFixtures.contains(fix.GetId()))
             {
-                // copy channel values from existing channels so value doesn't "flicker"
-                // on display since it takes a second or so for channel values to
-                // come over serial port after fixture data
+                // the fixture response only contains the fixture names, and the channel
+                // names for each fixture, not the values
+                // copy the existing channel values for each channel in the fixture response
+                // so that the GUI won't temporarily show 0s for all the channels while
+                // it waits for the channel values which come later in a different response
                 char key;
                 foreach(key, mFixtures[fix.GetId()].GetChannels().keys())
                 {
+                    // if channel doesn't exist, the [] operator for the map will create
+                    // a new one and insert for the key
                     fix.SetChannelValue(key,mFixtures[fix.GetId()].GetChannelValue(key));
                 }
 
-                // replace fixture
-                mFixtures.insert(fix.GetId(), fix);
+                // overwrite existing fixture with values from new fixture
+                mFixtures[fix.GetId()] = fix;
                 emit fixtureChanged( fix.GetId() );
             }
             else
@@ -323,7 +327,6 @@ bool ShowDesigner::ProcessResp(Response &resp)
                 emit fixturesChanged();
             }
         }
-
         break;
     }
     case CMD_ID_SETCHAN:
@@ -476,11 +479,11 @@ bool ShowDesigner::SetFixtureChannel(quint8 fixNum, quint8 channel, quint8 value
 bool ShowDesigner::RequestScenes(quint16 pageNo)
 {
     // send scenes command
-    if (pageNo == 0)
+    if (pageNo <= 0)
     {
         pageNo = mPageNo;
     }
-    if (pageNo == 0)
+    if (pageNo <= 0)
     {
         pageNo = 1;
     }
