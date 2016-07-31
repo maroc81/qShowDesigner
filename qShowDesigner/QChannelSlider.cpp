@@ -1,4 +1,4 @@
-#include "qchannelslider.h"
+#include "QChannelSlider.h"
 
 #include <QtDebug>
 #include <QSlider>

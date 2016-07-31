@@ -14,25 +14,27 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
-    serialconfig.cpp \
-    showdesigner.cpp \
-    qlineeditlabel.cpp \
-    fixture.cpp \
-    fixtures.cpp \
-    qchannelslider.cpp
+    ShowDesigner.cpp \
+    SerialConfig.cpp \
+    QLineEditLabel.cpp \
+    QChannelSlider.cpp \
+    Fixture.cpp \
+    Fixtures.cpp \
+    MainWindow.cpp
 
-HEADERS  += mainwindow.h \
-    serialconfig.h \
-    showdesigner.h \
-    qlineeditlabel.h \
-    fixture.h \
-    fixtures.h \
-    qchannelslider.h \
-    showdesignertest.h
+HEADERS  += \
+    ShowDesigner.h \
+    ShowDesignerTest.h \
+    SerialConfig.h \
+    QLineEditLabel.h \
+    QChannelSlider.h \
+    Fixture.h \
+    Fixtures.h \
+    MainWindow.h
 
-FORMS    += mainwindow.ui \
-    serialconfig.ui \
-    fixtures.ui
+FORMS    += \
+    Fixtures.ui \
+    MainWindow.ui \
+    SerialConfig.ui
 
 LIBS += -L/usr/lib/fglrx

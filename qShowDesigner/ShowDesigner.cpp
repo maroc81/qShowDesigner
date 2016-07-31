@@ -1,5 +1,5 @@
-#include "showdesigner.h"
-#include "showdesignertest.h"
+#include "ShowDesigner.h"
+#include "ShowDesignerTest.h"
 
 
 #include <QtDebug>

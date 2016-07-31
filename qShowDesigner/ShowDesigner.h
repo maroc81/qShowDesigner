@@ -1,7 +1,7 @@
 #ifndef SHOWDESIGNER_H
 #define SHOWDESIGNER_H
 
-#include "fixture.h"
+#include "Fixture.h"
 
 #include <QThread>
 #include <QSerialPort>

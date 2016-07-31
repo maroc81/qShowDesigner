@@ -1,4 +1,4 @@
-#include "serialconfig.h"
+#include "SerialConfig.h"
 #include "ui_serialconfig.h"
 
 #include <QSerialPortInfo>

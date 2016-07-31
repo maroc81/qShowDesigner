@@ -1,6 +1,6 @@
-#include "fixtures.h"
+#include "Fixtures.h"
 #include "ui_fixtures.h"
-#include "qchannelslider.h"
+#include "QChannelSlider.h"
 
 #include <QtDebug>
 #include <QSpinBox>

@@ -1,7 +1,7 @@
-#include "mainwindow.h"
+#include "MainWindow.h"
 #include "ui_mainwindow.h"
-#include "serialconfig.h"
-#include "qlineeditlabel.h"
+#include "SerialConfig.h"
+#include "QLineEditLabel.h"
 
 #include <QtDebug>
 #include <QMessageBox>

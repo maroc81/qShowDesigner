@@ -1,4 +1,4 @@
-#include "fixture.h"
+#include "Fixture.h"
 
 Fixture::Fixture() :
     mId(0),

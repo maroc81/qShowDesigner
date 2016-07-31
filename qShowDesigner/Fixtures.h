@@ -7,7 +7,7 @@
 #include <QAbstractTableModel>
 #include <QSettings>
 
-#include "showdesigner.h"
+#include "ShowDesigner.h"
 
 namespace Ui {
 class Fixtures;

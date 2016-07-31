@@ -1,4 +1,4 @@
-#include "qlineeditlabel.h"
+#include "QLineEditLabel.h"
 
 QLineEditLabel::QLineEditLabel(QWidget *parent) : QLineEdit(parent)
 {

@@ -5,8 +5,8 @@
 #include <QLabel>
 #include <QSettings>
 
-#include "showdesigner.h"
-#include "fixtures.h"
+#include "ShowDesigner.h"
+#include "Fixtures.h"
 
 namespace Ui {
 class MainWindow;
